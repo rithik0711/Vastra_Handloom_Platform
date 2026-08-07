@@ -1,0 +1,75 @@
+.app-shell {
+  min-height: 100vh;
+  padding: 32px;
+  background: linear-gradient(135deg, #fdf7ed 0%, #f7e6c6 100%);
+  color: #3f2a14;
+  font-family: Arial, sans-serif;
+}
+
+.hero-card {
+  max-width: 860px;
+  margin: 0 auto 24px;
+  padding: 36px;
+  border-radius: 24px;
+  background: #fffaf2;
+  box-shadow: 0 12px 40px rgba(90, 56, 20, 0.12);
+}
+
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.24em;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #9b5d1b;
+  margin-bottom: 12px;
+}
+
+.hero-card h1 {
+  font-size: 2.2rem;
+  margin: 0 0 12px;
+}
+
+.hero-card p {
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.cta-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 20px;
+}
+
+.primary-btn,
+.secondary-btn {
+  text-decoration: none;
+  padding: 10px 16px;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+.primary-btn {
+  background: #8b5e2f;
+  color: white;
+}
+
+.secondary-btn {
+  background: #f3dfbe;
+  color: #6b3f11;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+.info-grid article {
+  padding: 20px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(4px);
+}
