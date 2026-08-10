@@ -1,18 +1,33 @@
 import { Navigate } from "react-router-dom";
 
-const ProtectedRoute = ({ children, allowedRole }) => {
-  const role = localStorage.getItem("userRole");
+function ProtectedRoute({ children, allowedRole }) {
+  const userEmail = localStorage.getItem("userEmail");
 
-  if (!role) {
+  const getUserRole = () => {
+    if (userEmail === "rithikeswaran.it23@bitsathy.ac.in") {
+      return "manufacturer";
+    }
+
+    if (userEmail === "nadish.it23@bitsathy.ac.in") {
+      return "owner";
+    }
+    else{
+        return "customer";
+    }
+    return null;
+  };
+
+  const userRole = getUserRole();
+
+  if (!userEmail || !userRole) {
     return <Navigate to="/" replace />;
   }
 
-  if (role !== allowedRole) {
-    const fallbackPath = role === "Owner" ? "/owner" : role === "Agent" ? "/agent" : "/customer";
-    return <Navigate to={fallbackPath} replace />;
+  if (userRole !== allowedRole) {
+    return <Navigate to={`/${userRole}`} replace />;
   }
 
   return children;
-};
+}
 
 export default ProtectedRoute;
