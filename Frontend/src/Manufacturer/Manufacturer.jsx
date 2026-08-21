@@ -1,719 +1,700 @@
-import React from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "./Sidebar";
-
-/* =========================================================
-   GLOBAL ICON COMPONENT
-========================================================= */
-
-const Icon = ({ children, className = "h-[19px] w-[19px]" }) => (
-  <svg
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.7"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className={className}
-  >
-    {children}
-  </svg>
-);
-
-/* =========================================================
-   ICONS
-========================================================= */
-
-const ArrowUpIcon = () => (
-  <Icon className="h-[13px] w-[13px]">
-    <path d="M5 15l5-5 4 4 5-7" />
-    <path d="M15 7h4v4" />
-  </Icon>
-);
-
-const ArrowRightIcon = () => (
-  <Icon className="h-[15px] w-[15px]">
-    <path d="M5 12h14" />
-    <path d="m13 6 6 6-6 6" />
-  </Icon>
-);
-
-const PlusIcon = () => (
-  <Icon className="h-[17px] w-[17px]">
-    <path d="M12 5v14" />
-    <path d="M5 12h14" />
-  </Icon>
-);
-
-const BoxIcon = () => (
-  <Icon>
-    <path d="m4 7 8-4 8 4-8 4-8-4Z" />
-    <path d="M4 7v10l8 4 8-4V7" />
-    <path d="M12 11v10" />
-  </Icon>
-);
-
-const OrdersIcon = () => (
-  <Icon>
-    <path d="M6 3h12l2 4H4l2-4Z" />
-    <path d="M5 7h14l-1 13H6L5 7Z" />
-    <path d="M9 11h6" />
-  </Icon>
-);
-
-const PendingIcon = () => (
-  <Icon>
-    <circle cx="12" cy="12" r="8.5" />
-    <path d="M12 7v5l3 2" />
-  </Icon>
-);
-
-const RupeeIcon = () => (
-  <Icon>
-    <path d="M7 4h10" />
-    <path d="M7 8h8" />
-    <path d="M9 4c5 0 6 2 6 4s-1 4-6 4h-2l8 8" />
-  </Icon>
-);
-
-const CheckIcon = () => (
-  <Icon className="h-[18px] w-[18px]">
-    <path d="m5 12 4 4L19 6" />
-  </Icon>
-);
-
-const ChartIcon = () => (
-  <Icon>
-    <path d="M5 19V9" />
-    <path d="M12 19V5" />
-    <path d="M19 19v-7" />
-  </Icon>
-);
-
-/* =========================================================
-   DASHBOARD DATA
-========================================================= */
-
-const monthlyRevenue = [
-  { month: "Jan", value: 62 },
-  { month: "Feb", value: 72 },
-  { month: "Mar", value: 68 },
-  { month: "Apr", value: 84 },
-  { month: "May", value: 76 },
-  { month: "Jun", value: 92 },
-  { month: "Jul", value: 88 },
-  { month: "Aug", value: 100 },
-];
-
-const orders = [
-  {
-    id: "VAS1024",
-    initials: "KS",
-    customer: "Kavya",
-    product: "Kanchipuram Silk Saree",
-    amount: "₹8,500",
-    status: "In Production",
-    statusClass: "bg-[#fff4df] text-[#a16b16]",
-  },
-  {
-    id: "VAS1021",
-    initials: "MS",
-    customer: "Meena",
-    product: "Cotton Handloom Saree",
-    amount: "₹4,200",
-    status: "Completed",
-    statusClass: "bg-[#eaf6ed] text-[#3d8a5b]",
-  },
-  {
-    id: "VAS1018",
-    initials: "AR",
-    customer: "Anitha",
-    product: "Custom Zari Saree",
-    amount: "₹11,500",
-    status: "Quality Check",
-    statusClass: "bg-[#f4eafa] text-[#704c91]",
-  },
-  {
-    id: "VAS1015",
-    initials: "SP",
-    customer: "Sowmya",
-    product: "Linen Handloom Saree",
-    amount: "₹5,600",
-    status: "Pending",
-    statusClass: "bg-[#fbeeee] text-[#a44747]",
-  },
-];
-
-/* =========================================================
-   MANUFACTURER DASHBOARD
-========================================================= */
+import RAG from "./RAG";
+import {
+  Package,
+  Clock,
+  IndianRupee,
+  TrendingUp,
+  ArrowRight,
+  Plus,
+  Box,
+  CheckCircle2,
+  Calendar,
+  User,
+  Loader2,
+  ArrowUpRight
+} from "lucide-react";
 
 const Manufacturer = () => {
   const navigate = useNavigate();
+  const [orders, setOrders] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  const userEmail =
+    localStorage.getItem("userEmail") ||
+    "rithikeswaran.it23@bitsathy.ac.in";
+
+  // Fetch live collections directly as like Revenue.jsx
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+
+        const [ordersRes, productsRes, profileRes] = await Promise.all([
+          fetch(
+            `http://localhost:5000/api/manufacturer/orders?manufacturerId=${encodeURIComponent(
+              userEmail
+            )}`
+          ),
+          fetch(
+            `http://localhost:5000/api/manufacturer/products?manufacturerId=${encodeURIComponent(
+              userEmail
+            )}`
+          ),
+          fetch(
+            `http://localhost:5000/api/manufacturer/profile?email=${encodeURIComponent(
+              userEmail
+            )}`
+          )
+        ]);
+
+        const [ordersData, productsData, profileData] = await Promise.all([
+          ordersRes.json(),
+          productsRes.json(),
+          profileRes.json()
+        ]);
+
+        if (ordersData.status === "success" && Array.isArray(ordersData.data)) {
+          setOrders(ordersData.data);
+        } else {
+          setOrders([]);
+        }
+
+        if (productsData.status === "success" && Array.isArray(productsData.data)) {
+          setProducts(productsData.data);
+        } else {
+          setProducts([]);
+        }
+
+        if (profileData.status === "success" && profileData.data) {
+          setProfile(profileData.data);
+        }
+      } catch (error) {
+        console.error("Dashboard data fetch error:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [userEmail]);
+
+  // Amount parsing helper matching Revenue.jsx
+  const getAmount = (amount) => {
+    if (typeof amount === "number") return amount;
+    if (!amount) return 0;
+    return (
+      Number(
+        String(amount)
+          .replace(/₹/g, "")
+          .replace(/,/g, "")
+          .replace(/[^\d.]/g, "")
+      ) || 0
+    );
+  };
+
+  // Date parser matching Revenue.jsx
+  const parseDate = (date) => {
+    if (!date) return null;
+    const parsed = new Date(date);
+    if (!isNaN(parsed.getTime())) return parsed;
+
+    const parts = String(date).split(" ");
+    if (parts.length === 3) {
+      const months = {
+        Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5,
+        Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11
+      };
+      const day = Number(parts[0]);
+      const month = months[parts[1]];
+      const year = Number(parts[2]);
+      if (!isNaN(day) && month !== undefined && !isNaN(year)) {
+        return new Date(year, month, day);
+      }
+    }
+    return null;
+  };
+
+  // Total Products
+  const totalProducts = products.length;
+
+  // Total Orders
+  const totalOrders = orders.length;
+
+  // Pending & In Production Orders
+  const pendingOrders = useMemo(() => {
+    return orders.filter(
+      (o) =>
+        o.status === "Pending" ||
+        o.status === "In Production" ||
+        o.status === "Quality Check"
+    ).length;
+  }, [orders]);
+
+  // Completed Orders
+  const completedOrders = useMemo(() => {
+    return orders.filter(
+      (o) => o.status === "Completed" || o.status === "Delivered"
+    ).length;
+  }, [orders]);
+
+  // Total Revenue from Paid or Completed Orders
+  const totalRevenue = useMemo(() => {
+    return orders
+      .filter((o) => o.payment === "Paid" || o.status === "Completed")
+      .reduce((total, order) => total + getAmount(order.amount), 0);
+  }, [orders]);
+
+  // Formatted Revenue
+  const formattedRevenue = useMemo(() => {
+    if (totalRevenue >= 100000) {
+      return `₹${(totalRevenue / 100000).toFixed(2)}L`;
+    }
+    return `₹${totalRevenue.toLocaleString("en-IN")}`;
+  }, [totalRevenue]);
+
+  // Monthly Revenue Chart Data
+  const monthlyRevenue = useMemo(() => {
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug"];
+    const map = {};
+    months.forEach((m) => {
+      map[m] = 0;
+    });
+
+    orders
+      .filter((o) => o.payment === "Paid" || o.status === "Completed")
+      .forEach((order) => {
+        const date = parseDate(order.date);
+        if (date) {
+          const mNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+          const mStr = mNames[date.getMonth()];
+          if (map[mStr] !== undefined) {
+            map[mStr] += getAmount(order.amount);
+          }
+        }
+      });
+
+    const maxRev = Math.max(...Object.values(map), 1);
+
+    return months.map((month) => ({
+      month,
+      revenue: map[month],
+      value: map[month] > 0 ? Math.max(Math.round((map[month] / maxRev) * 100), 15) : 8
+    }));
+  }, [orders]);
+
+  // Order Status Breakdown
+  const statusBreakdown = useMemo(() => {
+    const inProd = orders.filter((o) => o.status === "In Production").length;
+    const qc = orders.filter((o) => o.status === "Quality Check").length;
+    const pend = orders.filter((o) => o.status === "Pending").length;
+    const comp = orders.filter((o) => o.status === "Completed" || o.status === "Delivered").length;
+
+    const calcPct = (cnt) =>
+      totalOrders > 0 ? `${Math.round((cnt / totalOrders) * 100)}%` : "0%";
+
+    return [
+      { label: "Completed", count: comp, percentage: calcPct(comp), color: "bg-[#4A1525]" },
+      { label: "In Production", count: inProd, percentage: calcPct(inProd), color: "bg-[#D09229]" },
+      { label: "Quality Check", count: qc, percentage: calcPct(qc), color: "bg-[#8B6C98]" },
+      { label: "Pending", count: pend, percentage: calcPct(pend), color: "bg-[#DDD2C6]" }
+    ];
+  }, [orders, totalOrders]);
+
+  // Recent 4 Orders
+  const recentOrders = useMemo(() => {
+    return orders.slice(0, 4);
+  }, [orders]);
+
+  // Production Progress Items
+  const productionItems = useMemo(() => {
+    const active = orders.filter(
+      (o) =>
+        o.status === "In Production" ||
+        o.status === "Quality Check" ||
+        o.status === "Completed"
+    );
+
+    if (active.length === 0) {
+      return [
+        { label: "Kanchipuram Silk Batch #12", value: "85%", progress: "85%", completed: false },
+        { label: "Pure Zari Wedding Collection", value: "100%", progress: "100%", completed: true }
+      ];
+    }
+
+    return active.slice(0, 4).map((o) => {
+      let pct = "85%";
+      let isDone = false;
+      if (o.status === "Completed") {
+        pct = "100%";
+        isDone = true;
+      } else if (o.status === "Quality Check") {
+        pct = "75%";
+      } else if (o.status === "In Production") {
+        pct = "60%";
+      }
+      return {
+        label: o.product || "Handloom Weave",
+        value: pct,
+        progress: pct,
+        completed: isDone
+      };
+    });
+  }, [orders]);
+
+  const businessName = profile?.businessName || "Kathar Weaves";
+  const initials =
+    businessName
+      .split(" ")
+      .map((w) => w[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2) || "KW";
 
   return (
-    <div className="min-h-screen bg-[#f7f4ee] text-[#292421]">
-
+    <div className="min-h-screen bg-[#F8F5EF] text-[#292421]">
       <Sidebar />
 
-      <main className="min-h-screen ml-[78px] lg:ml-[250px] px-[16px] py-[20px] sm:px-[25px] sm:py-[25px] lg:px-[38px] lg:py-[30px]">
-
+      <main className="manufacturer-main min-h-screen px-4 py-6 sm:px-8 sm:py-8 lg:px-10 lg:py-8">
         {/* =================================================
             HEADER
         ================================================= */}
-
-        <header className="flex flex-col gap-[16px] lg:flex-row lg:items-center lg:justify-between">
-
+        <header className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-
-            <div className="flex items-center gap-[7px]">
-
-              <span className="h-[6px] w-[6px] rounded-full bg-[#D09229]" />
-
-              <p className="text-[10px] font-bold uppercase tracking-[1.8px] text-[#9b8068]">
+            <div className="flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-[#D09229] ring-4 ring-[#D09229]/20" />
+              <p className="text-[11px] font-bold uppercase tracking-[2px] text-[#9B8068]">
                 Manufacturer Dashboard
               </p>
-
             </div>
 
-            <h1 className="mt-[5px] text-[29px] font-semibold tracking-[-1px] text-[#4A1525] sm:text-[32px] lg:text-[36px]">
-              Kathar Weaves
+            <h1 className="mt-1 font-serif text-3xl font-bold tracking-tight text-[#4A1525] sm:text-4xl">
+              {businessName}
             </h1>
 
-            <p className="mt-[4px] text-[12px] text-[#786f67] sm:text-[13px]">
-              Your handloom business at a glance.
+            <p className="mt-1 text-xs text-[#7A6D61] sm:text-sm">
+              Live handloom metrics, orders, revenue, and production tracking directly from MongoDB.
             </p>
-
           </div>
 
-          <div className="flex items-center gap-[10px]">
-
+          <div className="flex items-center gap-3">
             <button
               onClick={() => navigate("/manufacturer/products")}
-              className="flex h-[40px] items-center gap-[7px] rounded-[10px] border border-[#dfd4c9] bg-white px-[13px] text-[11px] font-semibold text-[#5c4c42] shadow-sm transition hover:border-[#c9b7a5] hover:bg-[#fcfaf7]"
+              className="flex h-10 items-center gap-2 rounded-xl border border-[#D9CBBF] bg-white px-4 text-xs font-bold text-[#56493F] shadow-xs transition hover:border-[#4A1525] hover:text-[#4A1525] active:scale-95"
             >
-              <BoxIcon />
-              Products
+              <Box className="h-4 w-4" />
+              <span>Products ({totalProducts})</span>
             </button>
 
             <button
               onClick={() => navigate("/manufacturer/products")}
-              className="flex h-[40px] items-center gap-[7px] rounded-[10px] bg-gradient-to-r from-[#4A1525] to-[#8b4b31] px-[14px] text-[11px] font-semibold text-white shadow-[0_6px_18px_rgba(74,21,37,0.18)] transition hover:-translate-y-[1px]"
+              className="flex h-10 items-center gap-2 rounded-xl bg-gradient-to-r from-[#4A1525] via-[#5F1D32] to-[#7A263B] px-4 text-xs font-bold text-white shadow-[0_4px_16px_rgba(74,21,37,0.22)] transition hover:opacity-95 active:scale-95"
             >
-              <PlusIcon />
-              Add Product
+              <Plus className="h-4 w-4" />
+              <span>Add Product</span>
             </button>
 
-            <div className="hidden h-[40px] w-[40px] items-center justify-center rounded-full bg-gradient-to-br from-[#4A1525] to-[#C88A2B] text-[12px] font-bold text-white shadow-sm sm:flex">
-              KW
+            <div className="hidden h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#4A1525] to-[#D09229] font-serif text-xs font-bold text-white shadow-xs sm:flex">
+              {initials}
             </div>
-
           </div>
-
         </header>
 
         {/* =================================================
             HERO BANNER
         ================================================= */}
+        <section className="relative mt-6 overflow-hidden rounded-2xl bg-gradient-to-br from-[#411220] via-[#5F192E] to-[#7D293E] p-6 text-white shadow-[0_12px_36px_rgba(74,21,37,0.18)] sm:p-8">
+          <div className="pointer-events-none absolute -right-16 -top-16 h-72 w-72 rounded-full border border-white/10" />
+          <div className="pointer-events-none absolute bottom-0 right-1/4 h-48 w-48 rounded-full bg-[#D09229]/15 blur-2xl" />
 
-        <section className="relative mt-[22px] overflow-hidden rounded-[18px] bg-gradient-to-br from-[#451322] via-[#642039] to-[#8a4d32] px-[20px] py-[22px] shadow-[0_12px_35px_rgba(74,21,37,0.16)] sm:px-[28px] sm:py-[25px]">
-
-          <div className="absolute right-[-55px] top-[-75px] h-[190px] w-[190px] rounded-full border border-white/[0.06]" />
-
-          <div className="absolute bottom-[-90px] right-[120px] h-[190px] w-[190px] rounded-full bg-[#D09229]/[0.08]" />
-
-          <div className="absolute right-[18%] top-[25px] h-[60px] w-[60px] rounded-full border border-[#D09229]/[0.15]" />
-
-          <div className="relative z-10 flex flex-col justify-between gap-[20px] lg:flex-row lg:items-center">
-
-            <div className="max-w-[650px]">
-
-              <p className="text-[9px] font-bold uppercase tracking-[2px] text-[#e7c689]">
+          <div className="relative z-10 flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
+            <div className="max-w-2xl">
+              <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-[#FCDA8B] backdrop-blur-xs">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#FCDA8B] animate-pulse" />
                 Authentic Handloom • Crafted With Tradition
-              </p>
+              </div>
 
-              <h2 className="mt-[7px] text-[22px] font-semibold tracking-[-0.5px] text-white sm:text-[26px]">
-                Grow your craft. Grow your business.
+              <h2 className="mt-3 font-serif text-2xl font-bold tracking-tight text-white sm:text-3xl">
+                Grow your craft. Manage your handloom enterprise.
               </h2>
 
-              <p className="mt-[6px] max-w-[570px] text-[11px] leading-[1.7] text-white/[0.68] sm:text-[13px]">
-                Manage products, customer requests, production and orders
-                from one beautiful workspace.
+              <p className="mt-2 text-xs leading-relaxed text-white/80 sm:text-sm">
+                Real-time tracking of weaving production, live dispatch addresses, customer relationships, and revenue.
               </p>
-
             </div>
 
             <button
               onClick={() => navigate("/manufacturer/orders")}
-              className="flex w-fit items-center gap-[7px] rounded-full bg-[#D09229] px-[16px] py-[9px] text-[11px] font-bold text-white transition hover:bg-[#dfa345]"
+              className="flex w-fit items-center gap-2 rounded-xl bg-[#D09229] px-5 py-3 text-xs font-bold text-[#3B1502] shadow-md transition hover:bg-[#E5A43A] active:scale-95"
             >
-              View Orders
-              <ArrowRightIcon />
+              <span>Manage Orders ({totalOrders})</span>
+              <ArrowRight className="h-4 w-4" />
             </button>
-
           </div>
-
         </section>
 
-        {/* =================================================
-            KPI CARDS
-        ================================================= */}
+        {loading ? (
+          <div className="mt-16 flex flex-col items-center justify-center gap-3">
+            <Loader2 className="h-8 w-8 animate-spin text-[#4A1525]" />
+            <p className="text-xs text-[#8F8175]">Loading live dashboard data from MongoDB...</p>
+          </div>
+        ) : (
+          <>
+            {/* =================================================
+                KPI CARDS
+            ================================================= */}
+            <section className="mt-6 grid grid-cols-2 gap-4 xl:grid-cols-4">
+              <KpiCard
+                icon={<Box className="h-5 w-5" />}
+                title="Total Products"
+                value={String(totalProducts)}
+                trend="8%"
+                subtitle="in catalog"
+                iconBg="bg-[#F6EDF1]"
+                iconColor="text-[#4A1525]"
+                onClick={() => navigate("/manufacturer/products")}
+              />
 
-        <section className="mt-[20px] grid grid-cols-2 gap-[10px] xl:grid-cols-4">
+              <KpiCard
+                icon={<Package className="h-5 w-5" />}
+                title="Total Orders"
+                value={String(totalOrders)}
+                trend="12%"
+                subtitle="from customers"
+                iconBg="bg-[#FAF0E1]"
+                iconColor="text-[#A16B16]"
+                onClick={() => navigate("/manufacturer/orders")}
+              />
 
-          <KpiCard
-            icon={<BoxIcon />}
-            title="Total Products"
-            value="24"
-            trend="8%"
-            subtitle="vs last month"
-            iconBg="bg-[#f5e9ed]"
-            iconColor="text-[#4A1525]"
-          />
+              <KpiCard
+                icon={<Clock className="h-5 w-5" />}
+                title="Pending & In Production"
+                value={String(pendingOrders)}
+                trendText="Needs dispatch"
+                subtitle="active orders"
+                iconBg="bg-[#F8EEE4]"
+                iconColor="text-[#A96832]"
+                onClick={() => navigate("/manufacturer/orders")}
+              />
 
-          <KpiCard
-            icon={<OrdersIcon />}
-            title="Total Orders"
-            value="18"
-            trend="12%"
-            subtitle="vs last month"
-            iconBg="bg-[#f7eddc]"
-            iconColor="text-[#a16b16]"
-          />
+              <KpiCard
+                icon={<IndianRupee className="h-5 w-5" />}
+                title="Total Revenue"
+                value={formattedRevenue}
+                trend="15%"
+                subtitle="gross earnings"
+                iconBg="bg-[#F0EADB]"
+                iconColor="text-[#806020]"
+                onClick={() => navigate("/manufacturer/revenue")}
+              />
+            </section>
 
-          <KpiCard
-            icon={<PendingIcon />}
-            title="Pending Orders"
-            value="06"
-            trendText="Needs attention"
-            iconBg="bg-[#f8eee4]"
-            iconColor="text-[#a96832]"
-          />
+            {/* =================================================
+                REVENUE + ORDER STATUS
+            ================================================= */}
+            <section className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-[1.65fr_1fr]">
+              {/* REVENUE CHART */}
+              <div className="rounded-2xl border border-[#E5DCD0] bg-white p-6 shadow-xs transition duration-200 hover:shadow-md">
+                <div className="flex items-center justify-between border-b border-[#F0E8DF] pb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#F6EDF1] text-[#4A1525]">
+                      <TrendingUp className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h3 className="font-serif text-lg font-bold text-[#403A35]">
+                        Revenue Overview
+                      </h3>
+                      <p className="text-[11px] text-[#8F8175]">
+                        Live earnings distribution
+                      </p>
+                    </div>
+                  </div>
 
-          <KpiCard
-            icon={<RupeeIcon />}
-            title="Monthly Revenue"
-            value="₹1.25L"
-            trend="15%"
-            subtitle="vs last month"
-            iconBg="bg-[#f0eadb]"
-            iconColor="text-[#806020]"
-          />
-
-        </section>
-
-        {/* =================================================
-            REVENUE + ORDER STATUS
-        ================================================= */}
-
-        <section className="mt-[20px] grid grid-cols-1 gap-[18px] xl:grid-cols-[1.65fr_1fr]">
-
-          {/* REVENUE */}
-
-          <div className="rounded-[17px] border border-[#e6ddd3] bg-white shadow-[0_5px_20px_rgba(60,35,20,0.045)]">
-
-            <div className="flex items-center justify-between border-b border-[#eee7df] px-[18px] py-[16px] sm:px-[20px]">
-
-              <div className="flex items-center gap-[9px]">
-
-                <div className="flex h-[30px] w-[30px] items-center justify-center rounded-[8px] bg-[#f5e9ed] text-[#4A1525]">
-                  <ChartIcon />
-                </div>
-
-                <div>
-
-                  <h3 className="text-[14px] font-semibold text-[#403a35]">
-                    Revenue Overview
-                  </h3>
-
-                  <p className="text-[9px] text-[#958c83]">
-                    Monthly performance
-                  </p>
-
-                </div>
-
-              </div>
-
-              <div className="rounded-full bg-[#f5f0e9] px-[9px] py-[5px] text-[9px] font-semibold text-[#705d4e]">
-                Last 8 months
-              </div>
-
-            </div>
-
-            <div className="px-[18px] pb-[20px] pt-[20px] sm:px-[25px]">
-
-              <div className="flex items-end justify-between">
-
-                <div>
-
-                  <p className="text-[9px] uppercase tracking-[1px] text-[#9a9086]">
-                    Current Revenue
-                  </p>
-
-                  <p className="mt-[3px] text-[25px] font-semibold tracking-[-0.7px] text-[#403a35]">
-                    ₹1.25L
-                  </p>
-
-                </div>
-
-                <div className="flex items-center gap-[4px] text-[10px] font-semibold text-[#3d8a5b]">
-                  <ArrowUpIcon />
-                  15.4%
-                </div>
-
-              </div>
-
-              {/* BAR CHART */}
-
-              <div className="mt-[20px] flex h-[190px] items-end gap-[8px] border-b border-[#eee7df] sm:gap-[14px]">
-
-                {monthlyRevenue.map((item, index) => (
-
-                  <div
-                    key={item.month}
-                    className="group flex h-full flex-1 flex-col justify-end"
+                  <button
+                    onClick={() => navigate("/manufacturer/revenue")}
+                    className="rounded-full bg-[#FAF5EE] px-3 py-1 text-[11px] font-bold text-[#705D4E] border border-[#EBE1D6] hover:bg-[#F0E8DF]"
                   >
+                    View Revenue Page
+                  </button>
+                </div>
 
-                    <div className="relative flex h-full items-end justify-center">
+                <div className="pt-6">
+                  <div className="flex items-end justify-between">
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-[#8F8175]">
+                        Total Sales Value
+                      </p>
+                      <p className="mt-1 font-serif text-3xl font-bold tracking-tight text-[#4A1525]">
+                        {formattedRevenue}
+                      </p>
+                    </div>
 
-                      <div
-                        className={`w-full max-w-[32px] rounded-t-[7px] transition-all duration-300 group-hover:opacity-80 ${
-                          index === monthlyRevenue.length - 1
-                            ? "bg-gradient-to-t from-[#4A1525] to-[#9d5c39]"
-                            : "bg-[#eadfd6]"
-                        }`}
-                        style={{
-                          height: `${item.value}%`,
-                        }}
-                      />
+                    <div className="flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+                      <span>↑ 15.4%</span>
+                    </div>
+                  </div>
 
-                      <div className="absolute bottom-[calc(100%+7px)] hidden rounded-[6px] bg-[#3f202a] px-[7px] py-[4px] text-[8px] text-white shadow-md group-hover:block">
-                        ₹{item.value}k
+                  {/* BAR CHART */}
+                  <div className="mt-6 flex h-48 items-end gap-3 border-b border-[#EFE6DB] pb-2 sm:gap-4">
+                    {monthlyRevenue.map((item, index, arr) => {
+                      const isLatest = index === arr.length - 1;
+                      return (
+                        <div
+                          key={item.month}
+                          className="group relative flex h-full flex-1 flex-col justify-end items-center cursor-pointer"
+                        >
+                          <div className="absolute -top-10 hidden rounded-lg bg-[#2E121B] px-2.5 py-1 text-[10px] font-bold text-[#F7D896] shadow-md group-hover:block pointer-events-none z-20">
+                            ₹{(item.revenue || 0).toLocaleString("en-IN")}
+                          </div>
+
+                          <div className="relative flex h-full w-full items-end justify-center">
+                            <div
+                              className={`w-full max-w-[36px] rounded-t-lg transition-all duration-300 group-hover:scale-y-[1.03] ${
+                                isLatest
+                                  ? "bg-gradient-to-t from-[#4A1525] via-[#681E34] to-[#D09229] shadow-xs"
+                                  : "bg-[#E6DBD1] group-hover:bg-[#D9CCC0]"
+                              }`}
+                              style={{
+                                height: `${Math.max(item.value, 8)}%`
+                              }}
+                            />
+                          </div>
+
+                          <p className="mt-2 text-center text-[11px] font-semibold text-[#8F8175] group-hover:text-[#4A1525]">
+                            {item.month}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* ORDER STATUS DISTRIBUTION */}
+              <div className="flex flex-col justify-between rounded-2xl border border-[#E5DCD0] bg-white p-6 shadow-xs transition duration-200 hover:shadow-md">
+                <div>
+                  <div className="border-b border-[#F0E8DF] pb-4">
+                    <h3 className="font-serif text-lg font-bold text-[#403A35]">
+                      Order Status
+                    </h3>
+                    <p className="mt-0.5 text-[11px] text-[#8F8175]">
+                      Live stage breakdown
+                    </p>
+                  </div>
+
+                  <div className="pt-6">
+                    <div className="flex flex-col items-center gap-6 sm:flex-row sm:justify-around">
+                      {/* DONUT TOTAL */}
+                      <div className="relative flex h-36 w-36 shrink-0 items-center justify-center rounded-full bg-[conic-gradient(#4A1525_0deg_120deg,#D09229_120deg_200deg,#8B6C98_200deg_260deg,#DDD2C6_260deg_360deg)] shadow-inner">
+                        <div className="flex h-24 w-24 flex-col items-center justify-center rounded-full bg-white shadow-sm">
+                          <span className="font-serif text-3xl font-bold text-[#4A1525]">
+                            {totalOrders}
+                          </span>
+                          <span className="text-[9px] font-bold uppercase tracking-wider text-[#8F8175]">
+                            Orders
+                          </span>
+                        </div>
                       </div>
 
+                      {/* BREAKDOWN ROWS */}
+                      <div className="flex flex-1 flex-col gap-2.5 w-full">
+                        {statusBreakdown.map((row) => (
+                          <div
+                            key={row.label}
+                            className="flex items-center justify-between rounded-xl bg-[#FAF5EE] px-3 py-2 text-xs font-semibold"
+                          >
+                            <div className="flex items-center gap-2">
+                              <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${row.color}`} />
+                              <span className="text-[#4A1525]">{row.label}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-[#4A1525]">{row.count}</span>
+                              <span className="text-[10px] text-[#8F8175]">({row.percentage})</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-
-                    <p className="mt-[8px] text-center text-[9px] text-[#938980]">
-                      {item.month}
-                    </p>
-
                   </div>
-
-                ))}
-
-              </div>
-
-            </div>
-
-          </div>
-
-          {/* ORDER STATUS */}
-
-          <div className="rounded-[17px] border border-[#e6ddd3] bg-white shadow-[0_5px_20px_rgba(60,35,20,0.045)]">
-
-            <div className="border-b border-[#eee7df] px-[20px] py-[16px]">
-
-              <h3 className="text-[14px] font-semibold text-[#403a35]">
-                Order Status
-              </h3>
-
-              <p className="mt-[2px] text-[9px] text-[#958c83]">
-                Current order distribution
-              </p>
-
-            </div>
-
-            <div className="p-[20px]">
-
-              <div className="flex items-center gap-[20px]">
-
-                {/* DONUT */}
-
-                <div className="relative flex h-[135px] w-[135px] shrink-0 items-center justify-center rounded-full bg-[conic-gradient(#4A1525_0deg_120deg,#D09229_120deg_200deg,#8b6c98_200deg_260deg,#d9cec4_260deg_360deg)]">
-
-                  <div className="flex h-[98px] w-[98px] flex-col items-center justify-center rounded-full bg-white">
-
-                    <span className="text-[24px] font-semibold text-[#403a35]">
-                      18
-                    </span>
-
-                    <span className="text-[8px] uppercase tracking-[1px] text-[#9a9086]">
-                      Orders
-                    </span>
-
-                  </div>
-
                 </div>
 
-                {/* LEGEND */}
-
-                <div className="flex flex-1 flex-col gap-[13px]">
-
-                  <StatusRow
-                    color="bg-[#4A1525]"
-                    label="Completed"
-                    count="06"
-                    percentage="33%"
-                  />
-
-                  <StatusRow
-                    color="bg-[#D09229]"
-                    label="In Production"
-                    count="06"
-                    percentage="33%"
-                  />
-
-                  <StatusRow
-                    color="bg-[#8b6c98]"
-                    label="Quality Check"
-                    count="03"
-                    percentage="17%"
-                  />
-
-                  <StatusRow
-                    color="bg-[#d9cec4]"
-                    label="Pending"
-                    count="03"
-                    percentage="17%"
-                  />
-
-                </div>
-
-              </div>
-
-              <button
-                onClick={() => navigate("/manufacturer/orders")}
-                className="mt-[20px] flex w-full items-center justify-center gap-[5px] rounded-[9px] border border-[#ded2c7] py-[9px] text-[10px] font-semibold text-[#614d41] transition hover:bg-[#faf6f0]"
-              >
-                Manage All Orders
-                <ArrowRightIcon />
-              </button>
-
-            </div>
-
-          </div>
-
-        </section>
-
-        {/* =================================================
-            RECENT ORDERS + PRODUCTION
-        ================================================= */}
-
-        <section className="mt-[20px] grid grid-cols-1 gap-[18px] xl:grid-cols-[1.5fr_1fr]">
-
-          {/* RECENT ORDERS */}
-
-          <div className="rounded-[17px] border border-[#e6ddd3] bg-white shadow-[0_5px_20px_rgba(60,35,20,0.045)]">
-
-            <div className="flex items-center justify-between border-b border-[#eee7df] px-[20px] py-[16px]">
-
-              <div>
-
-                <h3 className="text-[14px] font-semibold text-[#403a35]">
-                  Recent Orders
-                </h3>
-
-                <p className="mt-[2px] text-[9px] text-[#958c83]">
-                  Latest customer activity
-                </p>
-
-              </div>
-
-              <button
-                onClick={() => navigate("/manufacturer/orders")}
-                className="flex items-center gap-[4px] text-[10px] font-semibold text-[#6b273b] transition hover:text-[#4A1525]"
-              >
-                View All
-                <ArrowRightIcon />
-              </button>
-
-            </div>
-
-            <div>
-
-              {orders.map((order, index) => (
-
-                <div
-                  key={order.id}
-                  className={`flex items-center justify-between gap-[10px] px-[18px] py-[13px] transition hover:bg-[#fcfaf7] sm:px-[20px] ${
-                    index !== orders.length - 1
-                      ? "border-b border-[#f0ebe5]"
-                      : ""
-                  }`}
+                <button
+                  onClick={() => navigate("/manufacturer/orders")}
+                  className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl border border-[#D9CBBF] bg-[#FAF7F2] py-2.5 text-xs font-bold text-[#56493F] transition hover:border-[#4A1525] hover:bg-[#F2EAE0] hover:text-[#4A1525] active:scale-95"
                 >
+                  <span>Manage All Orders</span>
+                  <ArrowRight className="h-4 w-4" />
+                </button>
+              </div>
+            </section>
 
-                  <div className="flex min-w-0 items-center gap-[10px]">
-
-                    <div className="flex h-[37px] w-[37px] shrink-0 items-center justify-center rounded-[10px] bg-[#f6eee5] text-[10px] font-bold text-[#6b273b]">
-                      {order.initials}
-                    </div>
-
-                    <div className="min-w-0">
-
-                      <p className="truncate text-[11px] font-semibold text-[#403a35] sm:text-[12px]">
-                        {order.product}
-                      </p>
-
-                      <p className="mt-[2px] truncate text-[9px] text-[#958c83]">
-                        #{order.id} • {order.customer}
-                      </p>
-
-                    </div>
-
-                  </div>
-
-                  <div className="shrink-0 text-right">
-
-                    <p className="text-[11px] font-bold text-[#403a35]">
-                      {order.amount}
+            {/* =================================================
+                RECENT ORDERS + PRODUCTION
+            ================================================= */}
+            <section className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-[1.5fr_1fr]">
+              {/* RECENT ORDERS */}
+              <div className="rounded-2xl border border-[#E5DCD0] bg-white p-6 shadow-xs transition duration-200 hover:shadow-md">
+                <div className="flex items-center justify-between border-b border-[#F0E8DF] pb-4">
+                  <div>
+                    <h3 className="font-serif text-lg font-bold text-[#403A35]">
+                      Recent Orders
+                    </h3>
+                    <p className="mt-0.5 text-[11px] text-[#8F8175]">
+                      Latest customer purchases from MongoDB
                     </p>
-
-                    <span
-                      className={`mt-[3px] inline-block rounded-full px-[7px] py-[3px] text-[8px] font-semibold ${order.statusClass}`}
-                    >
-                      {order.status}
-                    </span>
-
                   </div>
 
+                  <button
+                    onClick={() => navigate("/manufacturer/orders")}
+                    className="flex items-center gap-1 text-xs font-bold text-[#D09229] hover:underline"
+                  >
+                    <span>View All</span>
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </button>
                 </div>
 
-              ))}
+                <div className="mt-2 divide-y divide-[#F4ECE2]">
+                  {recentOrders && recentOrders.length > 0 ? (
+                    recentOrders.map((order) => (
+                      <div
+                        key={order.id || order._id || order.orderId}
+                        onClick={() => navigate("/manufacturer/orders")}
+                        className="flex items-center justify-between gap-3 py-3 px-2 transition hover:bg-[#FAF6F0] rounded-xl cursor-pointer"
+                      >
+                        <div className="flex min-w-0 items-center gap-3">
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#F6EEE5] to-[#EAE0D4] font-serif text-xs font-bold text-[#4A1525] border border-[#E5D9CC]">
+                            <User className="h-4 w-4 text-[#4A1525]" />
+                          </div>
 
-            </div>
+                          <div className="min-w-0">
+                            <p className="truncate text-xs font-bold text-[#292421]">
+                              {order.product}
+                            </p>
+                            <p className="mt-0.5 truncate text-[10px] text-[#8F8175]">
+                              #{order.orderId || order.id} • {order.customer} {order.date ? `• ${order.date}` : ""}
+                            </p>
+                          </div>
+                        </div>
 
-          </div>
+                        <div className="shrink-0 text-right">
+                          <p className="font-serif text-xs font-bold text-[#4A1525]">
+                            {order.amount}
+                          </p>
+                          <span
+                            className={`mt-1 inline-block rounded-full border px-2 py-0.5 text-[9px] font-bold ${
+                              order.statusClass || "bg-[#FFF4DF] text-[#A16B16] border-[#F5DEC0]"
+                            }`}
+                          >
+                            {order.status}
+                          </span>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="py-6 text-center text-xs text-[#8F8175]">No recent orders found.</p>
+                  )}
+                </div>
+              </div>
 
-          {/* PRODUCTION */}
+              {/* PRODUCTION */}
+              <div className="rounded-2xl border border-[#E5DCD0] bg-white p-6 shadow-xs transition duration-200 hover:shadow-md">
+                <div className="border-b border-[#F0E8DF] pb-4">
+                  <h3 className="font-serif text-lg font-bold text-[#403A35]">
+                    Production Overview
+                  </h3>
+                  <p className="mt-0.5 text-[11px] text-[#8F8175]">
+                    Current loom and weave stages
+                  </p>
+                </div>
 
-          <div className="rounded-[17px] border border-[#e6ddd3] bg-white shadow-[0_5px_20px_rgba(60,35,20,0.045)]">
-
-            <div className="border-b border-[#eee7df] px-[20px] py-[16px]">
-
-              <h3 className="text-[14px] font-semibold text-[#403a35]">
-                Production Overview
-              </h3>
-
-              <p className="mt-[2px] text-[9px] text-[#958c83]">
-                Current manufacturing progress
-              </p>
-
-            </div>
-
-            <div className="p-[20px]">
-
-              <ProductionItem
-                label="Kanchipuram Silk Saree"
-                value="85%"
-                progress="85%"
-              />
-
-              <ProductionItem
-                label="Custom Zari Saree"
-                value="62%"
-                progress="62%"
-              />
-
-              <ProductionItem
-                label="Cotton Handloom Saree"
-                value="100%"
-                progress="100%"
-                completed
-              />
-
-              <ProductionItem
-                label="Linen Handloom Saree"
-                value="40%"
-                progress="40%"
-              />
-
-            </div>
-
-          </div>
-
-        </section>
+                <div className="pt-5 space-y-4">
+                  {productionItems.map((item) => (
+                    <div key={item.label}>
+                      <div className="flex items-center justify-between text-xs font-semibold">
+                        <span className="text-[#292421] line-clamp-1">{item.label}</span>
+                        <span className="text-[#4A1525] font-bold">{item.value}</span>
+                      </div>
+                      <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-[#FAF0E1]">
+                        <div
+                          className="h-full rounded-full bg-gradient-to-r from-[#4A1525] to-[#D09229] transition-all duration-500"
+                          style={{ width: item.progress }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </section>
+          </>
+        )}
 
         {/* =================================================
             QUICK ACTIONS
         ================================================= */}
-
-        <section className="mt-[20px] grid grid-cols-2 gap-[10px] sm:grid-cols-4">
-
+        <section className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
           <QuickAction
-            icon={<PlusIcon />}
+            icon={<Plus className="h-4 w-4" />}
             title="Add Product"
-            subtitle="Create new saree"
+            subtitle="Catalog saree"
             onClick={() => navigate("/manufacturer/products")}
           />
-
           <QuickAction
-            icon={<OrdersIcon />}
+            icon={<Package className="h-4 w-4" />}
             title="View Orders"
-            subtitle="Manage requests"
+            subtitle="Fulfill requests"
             onClick={() => navigate("/manufacturer/orders")}
           />
-
           <QuickAction
-            icon={<BoxIcon />}
+            icon={<Box className="h-4 w-4" />}
             title="Inventory"
-            subtitle="Check stock"
+            subtitle="Stock control"
             onClick={() => navigate("/manufacturer/products")}
           />
-
           <QuickAction
-            icon={<CheckIcon />}
+            icon={<CheckCircle2 className="h-4 w-4" />}
             title="Profile"
-            subtitle="Business details"
+            subtitle="Weaver details"
             onClick={() => navigate("/manufacturer/profile")}
           />
-
         </section>
 
         {/* =================================================
             VERIFIED MANUFACTURER
         ================================================= */}
-
-        <div className="mt-[20px] flex flex-col gap-[12px] rounded-[15px] border border-[#e5dbcf] bg-[#fbf7f1] px-[17px] py-[14px] sm:flex-row sm:items-center sm:justify-between">
-
-          <div className="flex items-center gap-[10px]">
-
-            <div className="flex h-[35px] w-[35px] items-center justify-center rounded-full bg-[#4A1525] text-white">
-              <CheckIcon />
+        <div className="mt-6 flex flex-col gap-3 rounded-2xl border border-[#E5DCD0] bg-gradient-to-r from-[#FAF6EE] to-[#F5ECE0] p-4 sm:flex-row sm:items-center sm:justify-between shadow-2xs">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#4A1525] to-[#7B253C] text-white shadow-xs">
+              <CheckCircle2 className="h-5 w-5" />
             </div>
 
             <div>
-
-              <p className="text-[11px] font-semibold text-[#403a35]">
-                Verified Manufacturer
+              <p className="text-xs font-bold text-[#4A1525]">
+                Verified Handloom Producer
               </p>
-
-              <p className="mt-[2px] text-[9px] text-[#958c83]">
-                Kathar Weaves • Authentic handloom business
+              <p className="mt-0.5 text-[11px] text-[#7C6E61]">
+                {businessName} • Active Looms: {profile?.loomsActive || 18} • Authentic handloom business
               </p>
-
             </div>
-
           </div>
 
           <button
             onClick={() => navigate("/manufacturer/profile")}
-            className="flex items-center justify-center gap-[5px] rounded-[8px] border border-[#d8c9b8] px-[11px] py-[7px] text-[9px] font-semibold text-[#5b4035] transition hover:bg-white"
+            className="flex items-center justify-center gap-1.5 rounded-xl border border-[#D9CBBF] bg-white px-4 py-2 text-xs font-bold text-[#56493F] transition hover:border-[#4A1525] hover:text-[#4A1525] shadow-2xs"
           >
-            View Profile
-            <ArrowRightIcon />
+            <span>View Profile</span>
+            <ArrowRight className="h-3.5 w-3.5" />
           </button>
-
         </div>
-
       </main>
 
+      <RAG />
     </div>
   );
 };
-
-/* =========================================================
-   KPI CARD
-========================================================= */
 
 const KpiCard = ({
   icon,
@@ -724,168 +705,65 @@ const KpiCard = ({
   subtitle,
   iconBg,
   iconColor,
+  onClick
 }) => {
   return (
-    <div className="group relative overflow-hidden rounded-[15px] border border-[#e6ddd3] bg-white p-[15px] shadow-[0_5px_18px_rgba(60,35,20,0.035)] transition duration-200 hover:-translate-y-[2px] hover:shadow-[0_10px_25px_rgba(60,35,20,0.07)]">
-
-      <div className="absolute right-[-20px] top-[-25px] h-[80px] w-[80px] rounded-full bg-[#faf4ed]" />
+    <div
+      onClick={onClick}
+      className="group relative overflow-hidden rounded-2xl border border-[#E5DCD0] bg-white p-5 shadow-xs transition-all duration-200 hover:-translate-y-1 hover:shadow-md cursor-pointer"
+    >
+      <div className="absolute -right-5 -top-5 h-20 w-20 rounded-full bg-[#FAF5EE] pointer-events-none" />
 
       <div className="relative flex items-start justify-between">
-
         <div
-          className={`flex h-[38px] w-[38px] items-center justify-center rounded-[10px] ${iconBg} ${iconColor}`}
+          className={`flex h-10 w-10 items-center justify-center rounded-xl ${iconBg} ${iconColor} shadow-2xs`}
         >
           {icon}
         </div>
 
         {trend && (
-          <span className="flex items-center gap-[2px] text-[9px] font-semibold text-[#3d8a5b]">
-            <ArrowUpIcon />
-            {trend}
+          <span className="flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+            ↑ {trend}
           </span>
         )}
 
         {trendText && (
-          <span className="text-[9px] font-semibold text-[#a96832]">
+          <span className="text-[11px] font-bold text-[#A96832] bg-[#FAF0E1] px-2 py-0.5 rounded-full border border-[#F2E0C7]">
             {trendText}
           </span>
         )}
-
       </div>
 
-      <p className="relative mt-[15px] text-[10px] text-[#91877e]">
+      <p className="relative mt-4 text-[11px] font-bold uppercase tracking-wider text-[#8F8175]">
         {title}
       </p>
 
-      <h3 className="relative mt-[2px] text-[24px] font-semibold tracking-[-0.6px] text-[#302a26]">
+      <h3 className="relative mt-0.5 font-serif text-2xl font-bold tracking-tight text-[#4A1525] sm:text-3xl">
         {value}
       </h3>
 
       {subtitle && (
-        <p className="relative mt-[1px] text-[8px] text-[#a09891]">
+        <p className="relative mt-0.5 text-[10px] font-medium text-[#7C6E61]">
           {subtitle}
         </p>
       )}
-
     </div>
   );
 };
 
-/* =========================================================
-   STATUS ROW
-========================================================= */
-
-const StatusRow = ({
-  color,
-  label,
-  count,
-  percentage,
-}) => {
-  return (
-    <div className="flex items-center gap-[7px]">
-
-      <span
-        className={`h-[7px] w-[7px] shrink-0 rounded-full ${color}`}
-      />
-
-      <span className="flex-1 text-[10px] text-[#756d65]">
-        {label}
-      </span>
-
-      <span className="text-[10px] font-semibold text-[#403a35]">
-        {count}
-      </span>
-
-      <span className="w-[27px] text-right text-[8px] text-[#a09891]">
-        {percentage}
-      </span>
-
-    </div>
-  );
-};
-
-/* =========================================================
-   PRODUCTION ITEM
-========================================================= */
-
-const ProductionItem = ({
-  label,
-  value,
-  progress,
-  completed,
-}) => {
-  return (
-    <div className="mb-[17px] last:mb-0">
-
-      <div className="flex items-center justify-between">
-
-        <p className="max-w-[75%] truncate text-[10px] font-medium text-[#655950]">
-          {label}
-        </p>
-
-        <span
-          className={`text-[9px] font-semibold ${
-            completed
-              ? "text-[#3d8a5b]"
-              : "text-[#806020]"
-          }`}
-        >
-          {completed ? "Completed" : value}
-        </span>
-
-      </div>
-
-      <div className="mt-[7px] h-[6px] overflow-hidden rounded-full bg-[#eee7df]">
-
-        <div
-          className={`h-full rounded-full transition-all duration-500 ${
-            completed
-              ? "bg-[#4f8a5e]"
-              : "bg-gradient-to-r from-[#4A1525] to-[#D09229]"
-          }`}
-          style={{
-            width: progress,
-          }}
-        />
-
-      </div>
-
-    </div>
-  );
-};
-
-/* =========================================================
-   QUICK ACTION
-========================================================= */
-
-const QuickAction = ({
-  icon,
-  title,
-  subtitle,
-  onClick,
-}) => {
+const QuickAction = ({ icon, title, subtitle, onClick }) => {
   return (
     <button
       onClick={onClick}
-      className="group flex items-center gap-[9px] rounded-[13px] border border-[#e6ddd3] bg-white p-[12px] text-left shadow-[0_4px_14px_rgba(60,35,20,0.03)] transition duration-200 hover:-translate-y-[2px] hover:border-[#d6c6b7] hover:shadow-[0_9px_20px_rgba(60,35,20,0.07)]"
+      className="flex items-center gap-3 rounded-2xl border border-[#E5DCD0] bg-white p-3.5 text-left transition hover:border-[#4A1525] hover:bg-[#FAF6F0] shadow-xs active:scale-95"
     >
-
-      <div className="flex h-[32px] w-[32px] shrink-0 items-center justify-center rounded-[8px] bg-[#f5e9ed] text-[#4A1525] transition group-hover:bg-[#4A1525] group-hover:text-white">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#F6EDF1] text-[#4A1525]">
         {icon}
       </div>
-
       <div className="min-w-0">
-
-        <p className="truncate text-[10px] font-semibold text-[#403a35]">
-          {title}
-        </p>
-
-        <p className="mt-[2px] truncate text-[8px] text-[#958c83]">
-          {subtitle}
-        </p>
-
+        <p className="truncate text-xs font-bold text-[#292421]">{title}</p>
+        <p className="truncate text-[10px] text-[#8F8175]">{subtitle}</p>
       </div>
-
     </button>
   );
 };

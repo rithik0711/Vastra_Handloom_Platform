@@ -1,63 +1,41 @@
+import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 
 import Login from "./Login";
 import ProtectedRoute from "./components/ProtectedRoute";
 
+// Owner Views
 import Owner from "./Owner/Owner";
-import Customer from "./Customer/Customer";
+import Factory from "./Owner/Factory";
 
+// Customer Views
+import CustomerDashboard from "./Customer/Dashboard";
+import CustomerOrder from "./Customer/Order";
+import CustomerBooking from "./Customer/Booking";
+import CustomerManufacturers from "./Customer/Manufacturers";
+import CustomerProfile from "./Customer/Profile";
+
+// Manufacturer Views
 import Manufacturer from "./Manufacturer/Manufacturer";
 import Products from "./Manufacturer/Products";
 import Orders from "./Manufacturer/Orders";
 import Profile from "./Manufacturer/Profile";
+import Gallery from "./Manufacturer/Gallery";
+import Customers from "./Manufacturer/Customers";
+import Revenue from "./Manufacturer/Revenue";
 
 function App() {
-  const userEmail = localStorage.getItem("userEmail");
-
-  const getUserRole = () => {
-    if (userEmail === "rithikeswaran.it23@bitsathy.ac.in") {
-      return "manufacturer";
-    }
-
-    if (userEmail === "nadish.it23@bitsathy.ac.in") {
-      return "owner";
-    }
-
-    if (userEmail) {
-      return "customer";
-    }
-
-    return null;
-  };
-
-  const userRole = getUserRole();
+  const userRole = localStorage.getItem("userRole");
 
   return (
     <Routes>
-
-      {/* Login */}
+      {/* Auth Entry Route */}
       <Route
         path="/"
-        element={
-          userEmail && userRole ? (
-            <Navigate to={`/${userRole}`} replace />
-          ) : (
-            <Login />
-          )
-        }
+        element={userRole ? <Navigate to={`/${userRole}`} replace /> : <Login />}
       />
 
-      {/* Owner */}
-      <Route
-        path="/owner"
-        element={
-          <ProtectedRoute allowedRole="owner">
-            <Owner />
-          </ProtectedRoute>
-        }
-      />
-
-      {/* Manufacturer Dashboard */}
+      {/* Manufacturer Portal Routes */}
       <Route
         path="/manufacturer"
         element={
@@ -66,8 +44,14 @@ function App() {
           </ProtectedRoute>
         }
       />
-
-      {/* Manufacturer Products */}
+      <Route
+        path="/manufacturer/dashboard"
+        element={
+          <ProtectedRoute allowedRole="manufacturer">
+            <Manufacturer />
+          </ProtectedRoute>
+        }
+      />
       <Route
         path="/manufacturer/products"
         element={
@@ -76,8 +60,6 @@ function App() {
           </ProtectedRoute>
         }
       />
-
-      {/* Manufacturer Orders */}
       <Route
         path="/manufacturer/orders"
         element={
@@ -86,8 +68,22 @@ function App() {
           </ProtectedRoute>
         }
       />
-
-      {/* Manufacturer Profile */}
+      <Route
+        path="/manufacturer/gallery"
+        element={
+          <ProtectedRoute allowedRole="manufacturer">
+            <Gallery />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/manufacturer/revenue"
+        element={
+          <ProtectedRoute allowedRole="manufacturer">
+            <Revenue />
+          </ProtectedRoute>
+        }
+      />
       <Route
         path="/manufacturer/profile"
         element={
@@ -96,25 +92,79 @@ function App() {
           </ProtectedRoute>
         }
       />
-
-      {/* Customer */}
       <Route
-        path="/customer"
+        path="/manufacturer/customers"
         element={
-          <ProtectedRoute allowedRole="customer">
-            <Customer />
+          <ProtectedRoute allowedRole="manufacturer">
+            <Customers />
           </ProtectedRoute>
         }
       />
 
-      {/* Invalid Route */}
+      {/* Customer Portal Routes */}
       <Route
-        path="*"
-        element={<Navigate to="/" replace />}
+        path="/customer"
+        element={
+          <ProtectedRoute allowedRole="customer">
+            <CustomerDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/customer/orders"
+        element={
+          <ProtectedRoute allowedRole="customer">
+            <CustomerOrder />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/customer/booking"
+        element={
+          <ProtectedRoute allowedRole="customer">
+            <CustomerBooking />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/customer/manufacturers"
+        element={
+          <ProtectedRoute allowedRole="customer">
+            <CustomerManufacturers />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/customer/profile"
+        element={
+          <ProtectedRoute allowedRole="customer">
+            <CustomerProfile />
+          </ProtectedRoute>
+        }
       />
 
+      {/* Owner Administration Portal Routes */}
+      <Route
+        path="/owner"
+        element={
+          <ProtectedRoute allowedRole="owner">
+            <Owner />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/owner/factories"
+        element={
+          <ProtectedRoute allowedRole="owner">
+            <Factory />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Catch-All Fallback */}
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }
 
-export default App;
+export default App; 

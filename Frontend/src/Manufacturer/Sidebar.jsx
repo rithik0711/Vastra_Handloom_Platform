@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 
 import DashboardIcon from "@mui/icons-material/Dashboard";
@@ -7,10 +7,30 @@ import CommentIcon from "@mui/icons-material/Comment";
 import PersonIcon from "@mui/icons-material/Person";
 import KeyboardArrowLeftIcon from "@mui/icons-material/KeyboardArrowLeft";
 import LogoutIcon from "@mui/icons-material/Logout";
-
+import CollectionsIcon from '@mui/icons-material/Collections';
+import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
+import PeopleIcon from '@mui/icons-material/People';
 export default function Sidebar() {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => {
+    const saved = localStorage.getItem("manufacturerSidebarCollapsed");
+    return saved ? JSON.parse(saved) : false;
+  });
   const navigate = useNavigate();
+
+  useEffect(() => {
+    localStorage.setItem(
+      "manufacturerSidebarCollapsed",
+      JSON.stringify(collapsed)
+    );
+    document.body.classList.toggle(
+      "manufacturer-sidebar-collapsed",
+      collapsed
+    );
+
+    return () => {
+      document.body.classList.remove("manufacturer-sidebar-collapsed");
+    };
+  }, [collapsed]);
 
   const menuItems = [
     {
@@ -27,6 +47,21 @@ export default function Sidebar() {
       name: "Orders",
       path: "/manufacturer/orders",
       icon: CommentIcon,
+    },
+    {
+      name: "Gallery",
+      path: "/manufacturer/gallery",
+      icon: CollectionsIcon,
+    },
+    {
+      name: "Customers",
+      path: "/manufacturer/customers",
+      icon: PeopleIcon,
+    },
+    {
+      name: "Revenue",
+      path: "/manufacturer/revenue",
+      icon: MonetizationOnIcon,
     },
     {
       name: "Profile",
@@ -73,12 +108,10 @@ export default function Sidebar() {
                 end={item.path === "/manufacturer"}
                 title={collapsed ? item.name : ""}
                 className={({ isActive }) =>
-                  `group relative flex h-[48px] items-center rounded-[10px] transition-all duration-200 ${
-                    collapsed ? "justify-center px-0" : "gap-[14px] px-[14px]"
-                  } ${
-                    isActive
-                      ? "bg-gradient-to-r from-[#4A1525] to-[#7A263B] text-white shadow-[0_5px_14px_rgba(74,21,37,0.18)]"
-                      : "text-[#625b54] hover:bg-[#f5eee5] hover:text-[#4A1525]"
+                  `group relative flex h-[48px] items-center rounded-[10px] transition-all duration-200 ${collapsed ? "justify-center px-0" : "gap-[14px] px-[14px]"
+                  } ${isActive
+                    ? "bg-gradient-to-r from-[#4A1525] to-[#7A263B] text-white shadow-[0_5px_14px_rgba(74,21,37,0.18)]"
+                    : "text-[#625b54] hover:bg-[#f5eee5] hover:text-[#4A1525]"
                   }`
                 }
               >
@@ -146,7 +179,7 @@ export default function Sidebar() {
           <LogoutIcon sx={{ fontSize: 21 }} />
 
           {!collapsed && (
-            <span className="text-[14px] font-medium">
+            <span className="text-[14px] font-medium" >
               Logout
             </span>
           )}

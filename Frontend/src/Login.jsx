@@ -16,15 +16,10 @@ export default function Login() {
       return "manufacturer";
     }
 
-    if (userEmail === "nadish.it23@bitsathy.ac.in") {
+    if (userEmail === "rithikeswaran2005@gmail.com") {
       return "owner";
     }
-
-    if (userEmail === "vijayaragan.it23@bitsathy.ac.in") {
-      return "customer";
-    }
-
-    return null;
+    return "customer";
   };
 
   // Normal Email Login

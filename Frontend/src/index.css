@@ -26,3 +26,18 @@ body,
   /* allow page scrolling (was preventing scroll) */
   overflow: auto;
 }
+
+.manufacturer-main {
+  transition: margin-left 0.3s ease;
+  margin-left: 78px;
+}
+
+@media (min-width: 1024px) {
+  .manufacturer-main {
+    margin-left: 250px;
+  }
+
+  body.manufacturer-sidebar-collapsed .manufacturer-main {
+    margin-left: 78px;
+  }
+}

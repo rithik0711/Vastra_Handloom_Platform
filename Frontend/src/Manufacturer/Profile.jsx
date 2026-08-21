@@ -1,62 +1,112 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Sidebar from "./Sidebar";
+import RAG from "./RAG";
 
 export default function Profile() {
   const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [notification, setNotification] = useState(null);
+
+  const userEmail = localStorage.getItem("userEmail") || "rithikeswaran.it23@bitsathy.ac.in";
 
   const [profile, setProfile] = useState({
     businessName: "Kathar Weaves",
     ownerName: "Rithikeswaran M",
-    email: "rithikeswaran.it23@bitsathy.ac.in",
+    email: userEmail,
     phone: "+91 98765 43210",
     location: "Coimbatore, Tamil Nadu",
-    address: "Coimbatore, Tamil Nadu, India",
+    address: "124, Handloom Weaver Colony, Coimbatore, Tamil Nadu 641048",
     specialization: "Handloom Silk & Cotton Sarees",
     experience: "15+ Years",
+    loomsActive: 18,
+    artisanCount: 32,
+    gstin: "33AABCK1234F1Z9",
     description:
       "Kathar Weaves is a traditional handloom manufacturer focused on creating authentic, high-quality sarees while preserving India's rich weaving heritage.",
   });
 
+  const fetchProfile = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch(`http://localhost:5000/api/manufacturer/profile?email=${encodeURIComponent(userEmail)}`);
+      const json = await res.json();
+      if (json.status === "success" && json.data) {
+        setProfile((prev) => ({ ...prev, ...json.data, email: userEmail }));
+      }
+    } catch (err) {
+      console.error("Error fetching profile:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProfile();
+  }, [userEmail]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
-
     setProfile((prev) => ({
       ...prev,
       [name]: value,
     }));
   };
 
-  const handleSave = () => {
-    setIsEditing(false);
-    localStorage.setItem("manufacturerProfile", JSON.stringify(profile));
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+      const res = await fetch("http://localhost:5000/api/manufacturer/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...profile, email: userEmail })
+      });
+      const json = await res.json();
+      if (json.status === "success") {
+        setIsEditing(false);
+        setNotification("Profile details saved successfully!");
+        setTimeout(() => setNotification(null), 4000);
+      } else {
+        alert(json.message || "Failed to update profile.");
+      }
+    } catch (err) {
+      console.error("Save profile error:", err);
+      alert("Error saving profile.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleCancel = () => {
     setIsEditing(false);
+    fetchProfile();
   };
 
   return (
-    <div className="min-h-screen bg-[#f8f5ef]">
+    <div className="min-h-screen bg-[#F8F5EF] text-[#292421]">
 
       {/* Sidebar */}
       <Sidebar />
 
       {/* Main Content */}
-      <main className="ml-[78px] min-h-screen px-[20px] py-[24px] transition-all duration-300 lg:ml-[250px] lg:px-[38px] lg:py-[30px]">
+      <main className="manufacturer-main min-h-screen px-4 py-6 sm:px-8 sm:py-8 lg:px-10 lg:py-8">
 
         {/* Page Header */}
-        <div className="flex flex-col gap-[16px] md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
 
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[1.6px] text-[#a08b76]">
-              Manufacturer
-            </p>
+            <div className="flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-[#D09229] ring-4 ring-[#D09229]/20" />
+              <p className="text-[11px] font-bold uppercase tracking-[2px] text-[#9B8068]">
+                Manufacturer
+              </p>
+            </div>
 
-            <h1 className="mt-[4px] text-[28px] font-semibold tracking-[-0.7px] text-[#4A1525]">
+            <h1 className="mt-1 font-serif text-3xl font-bold tracking-tight text-[#4A1525] sm:text-4xl">
               Profile
             </h1>
 
-            <p className="mt-[5px] text-[13px] text-[#746b62]">
+            <p className="mt-1 text-xs text-[#7A6D61] sm:text-sm">
               Manage your Kathar Weaves business profile.
             </p>
           </div>
@@ -65,49 +115,43 @@ export default function Profile() {
           {!isEditing ? (
             <button
               onClick={() => setIsEditing(true)}
-              className="flex h-[42px] items-center justify-center gap-[8px] rounded-[10px] bg-gradient-to-r from-[#4A1525] to-[#7A263B] px-[18px] text-[12px] font-semibold text-white shadow-[0_5px_15px_rgba(74,21,37,0.16)] transition hover:opacity-95 active:scale-[0.98]"
+              className="flex h-10 items-center justify-center gap-2 self-start rounded-xl bg-gradient-to-r from-[#4A1525] via-[#5F1D32] to-[#7A263B] px-5 text-xs font-bold text-white shadow-[0_4px_16px_rgba(74,21,37,0.22)] transition hover:opacity-95 active:scale-95 md:self-center"
             >
-              {/* Edit Icon */}
               <svg
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="1.8"
-                className="h-[16px] w-[16px]"
+                className="h-4 w-4"
               >
-                <path
-                  d="M12 20h9"
-                  strokeLinecap="round"
-                />
+                <path d="M12 20h9" strokeLinecap="round" />
                 <path
                   d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4L16.5 3.5Z"
                   strokeLinejoin="round"
                 />
               </svg>
-
-              Edit Profile
+              <span>Edit Profile</span>
             </button>
           ) : (
-            <div className="flex gap-[8px]">
+            <div className="flex gap-2 self-start md:self-center">
 
               <button
                 onClick={handleCancel}
-                className="h-[42px] rounded-[10px] border border-[#d8cec3] bg-white px-[16px] text-[12px] font-semibold text-[#6e6258] transition hover:bg-[#faf7f2]"
+                className="h-10 rounded-xl border border-[#D9CBBF] bg-white px-4 text-xs font-bold text-[#56493F] transition hover:bg-[#FAF7F2] active:scale-95"
               >
                 Cancel
               </button>
 
               <button
                 onClick={handleSave}
-                className="flex h-[42px] items-center gap-[7px] rounded-[10px] bg-gradient-to-r from-[#4A1525] to-[#7A263B] px-[18px] text-[12px] font-semibold text-white shadow-[0_5px_15px_rgba(74,21,37,0.16)] transition hover:opacity-95"
+                className="flex h-10 items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#4A1525] to-[#7A263B] px-5 text-xs font-bold text-white shadow-[0_4px_16px_rgba(74,21,37,0.22)] transition hover:opacity-95 active:scale-95"
               >
-                {/* Check Icon */}
                 <svg
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="2"
-                  className="h-[15px] w-[15px]"
+                  className="h-4 w-4"
                 >
                   <path
                     d="m5 12 4 4L19 6"
@@ -115,8 +159,7 @@ export default function Profile() {
                     strokeLinejoin="round"
                   />
                 </svg>
-
-                Save Changes
+                <span>Save Changes</span>
               </button>
 
             </div>
@@ -124,37 +167,50 @@ export default function Profile() {
 
         </div>
 
+        {/* Notification Toast */}
+        {notification && (
+          <div className="mt-6 flex items-center gap-3 rounded-2xl border border-emerald-300 bg-emerald-50 p-4 text-emerald-800 shadow-sm animate-fadeIn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5 text-emerald-600 shrink-0">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="m9 11 3 3L22 4" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            <span className="text-xs font-bold">{notification}</span>
+          </div>
+        )}
+
         {/* Profile Hero */}
-        <section className="relative mt-[24px] overflow-hidden rounded-[18px] border border-[#e4d9ce] bg-white shadow-[0_7px_25px_rgba(60,35,20,0.06)]">
+        <section className="relative mt-6 overflow-hidden rounded-2xl border border-[#E5DCD0] bg-white p-6 shadow-xs sm:p-8">
 
           {/* Decorative Background */}
-          <div className="absolute right-[-80px] top-[-100px] h-[260px] w-[260px] rounded-full bg-[#f7eee5] opacity-70" />
-          <div className="absolute bottom-[-120px] left-[-80px] h-[240px] w-[240px] rounded-full bg-[#f8edf0] opacity-60" />
+          <div className="pointer-events-none absolute -right-20 -top-20 h-72 w-72 rounded-full bg-[#FAF5EE] pointer-events-none" />
+          <div className="pointer-events-none absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-[#F6EDF1]/60 pointer-events-none" />
 
-          <div className="relative flex flex-col gap-[20px] p-[20px] sm:p-[25px] md:flex-row md:items-center md:p-[30px]">
+          <div className="relative flex flex-col gap-6 md:flex-row md:items-center">
 
             {/* Business Logo */}
             <div className="relative shrink-0">
 
-              <div className="flex h-[105px] w-[105px] items-center justify-center overflow-hidden rounded-[20px] border border-[#e4d8cd] bg-[#fcfaf7] shadow-sm sm:h-[120px] sm:w-[120px]">
+              <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-2xl border border-[#E5D9CC] bg-[#FAF7F2] p-2 shadow-xs sm:h-28 sm:w-28">
 
                 <img
-                  src="/images/logo.png"
+                  src="/images/kathar.png"
                   alt="Kathar Weaves"
-                  className="h-[90%] w-[90%] object-contain"
+                  className="h-full w-full object-contain"
+                  onError={(e) => {
+                    e.currentTarget.src = "/images/logo.png";
+                  }}
                 />
 
               </div>
 
               {/* Verified Badge */}
-              <div className="absolute bottom-[-7px] right-[-7px] flex h-[28px] w-[28px] items-center justify-center rounded-full border-[3px] border-white bg-[#3d8154] text-white">
-
+              <div className="absolute -bottom-1.5 -right-1.5 flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-emerald-600 text-white shadow-xs">
                 <svg
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="2.2"
-                  className="h-[13px] w-[13px]"
+                  className="h-3.5 w-3.5"
                 >
                   <path
                     d="m5 12 4 4L19 6"
@@ -162,7 +218,6 @@ export default function Profile() {
                     strokeLinejoin="round"
                   />
                 </svg>
-
               </div>
 
             </div>
@@ -170,41 +225,41 @@ export default function Profile() {
             {/* Business Details */}
             <div className="min-w-0 flex-1">
 
-              <div className="flex flex-wrap items-center gap-[8px]">
+              <div className="flex flex-wrap items-center gap-2.5">
 
-                <h2 className="text-[24px] font-semibold tracking-[-0.5px] text-[#4A1525]">
+                <h2 className="font-serif text-2xl font-bold tracking-tight text-[#4A1525] sm:text-3xl">
                   {profile.businessName}
                 </h2>
 
-                <span className="rounded-full bg-[#edf7ef] px-[9px] py-[4px] text-[9px] font-semibold text-[#3d8154]">
+                <span className="rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700">
                   Verified Manufacturer
                 </span>
 
               </div>
 
-              <p className="mt-[5px] text-[13px] font-medium text-[#756b62]">
+              <p className="mt-1 text-xs font-semibold text-[#705D4E] sm:text-sm">
                 {profile.specialization}
               </p>
 
-              <p className="mt-[9px] max-w-[650px] text-[12px] leading-[1.7] text-[#8b8178]">
+              <p className="mt-2 max-w-2xl text-xs leading-relaxed text-[#6D5F54] sm:text-sm">
                 {profile.description}
               </p>
 
-              <div className="mt-[13px] flex flex-wrap gap-[7px]">
+              <div className="mt-3 flex flex-wrap gap-2">
 
-                <span className="rounded-full bg-[#f7eee7] px-[10px] py-[5px] text-[10px] font-medium text-[#745845]">
+                <span className="rounded-md bg-[#FAF5EE] border border-[#EBE1D6] px-2.5 py-1 text-[11px] font-semibold text-[#7C6E61]">
                   Handloom
                 </span>
 
-                <span className="rounded-full bg-[#f7eee7] px-[10px] py-[5px] text-[10px] font-medium text-[#745845]">
+                <span className="rounded-md bg-[#FAF5EE] border border-[#EBE1D6] px-2.5 py-1 text-[11px] font-semibold text-[#7C6E61]">
                   Silk Sarees
                 </span>
 
-                <span className="rounded-full bg-[#f7eee7] px-[10px] py-[5px] text-[10px] font-medium text-[#745845]">
+                <span className="rounded-md bg-[#FAF5EE] border border-[#EBE1D6] px-2.5 py-1 text-[11px] font-semibold text-[#7C6E61]">
                   Cotton Sarees
                 </span>
 
-                <span className="rounded-full bg-[#f7eee7] px-[10px] py-[5px] font-medium text-[#745845]">
+                <span className="rounded-md bg-[#FAF5EE] border border-[#EBE1D6] px-2.5 py-1 text-[11px] font-semibold text-[#7C6E61]">
                   Custom Orders
                 </span>
 
@@ -217,119 +272,96 @@ export default function Profile() {
         </section>
 
         {/* Statistics */}
-        <div className="mt-[18px] grid grid-cols-2 gap-[12px] lg:grid-cols-4">
+        <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
 
-          <div className="rounded-[14px] border border-[#e7ddd3] bg-white p-[15px] shadow-[0_4px_15px_rgba(60,35,20,0.04)]">
-
-            <p className="text-[10px] text-[#938980]">
+          <div className="rounded-2xl border border-[#E5DCD0] bg-white p-4 shadow-xs transition duration-200 hover:-translate-y-0.5 hover:shadow-md">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-[#8F8175]">
               Products
             </p>
-
-            <p className="mt-[4px] text-[23px] font-semibold text-[#403a35]">
+            <p className="mt-1 font-serif text-2xl font-bold text-[#4A1525]">
               24
             </p>
-
-            <p className="mt-[2px] text-[9px] text-[#3d8154]">
+            <p className="mt-0.5 text-[10px] font-semibold text-emerald-700">
               Active products
             </p>
-
           </div>
 
-          <div className="rounded-[14px] border border-[#e7ddd3] bg-white p-[15px] shadow-[0_4px_15px_rgba(60,35,20,0.04)]">
-
-            <p className="text-[10px] text-[#938980]">
+          <div className="rounded-2xl border border-[#E5DCD0] bg-white p-4 shadow-xs transition duration-200 hover:-translate-y-0.5 hover:shadow-md">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-[#8F8175]">
               Orders
             </p>
-
-            <p className="mt-[4px] text-[23px] font-semibold text-[#403a35]">
+            <p className="mt-1 font-serif text-2xl font-bold text-[#4A1525]">
               128
             </p>
-
-            <p className="mt-[2px] text-[9px] text-[#3d8154]">
+            <p className="mt-0.5 text-[10px] font-semibold text-emerald-700">
               Completed orders
             </p>
-
           </div>
 
-          <div className="rounded-[14px] border border-[#e7ddd3] bg-white p-[15px] shadow-[0_4px_15px_rgba(60,35,20,0.04)]">
-
-            <p className="text-[10px] text-[#938980]">
+          <div className="rounded-2xl border border-[#E5DCD0] bg-white p-4 shadow-xs transition duration-200 hover:-translate-y-0.5 hover:shadow-md">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-[#8F8175]">
               Experience
             </p>
-
-            <p className="mt-[4px] text-[23px] font-semibold text-[#403a35]">
+            <p className="mt-1 font-serif text-2xl font-bold text-[#4A1525]">
               15+
             </p>
-
-            <p className="mt-[2px] text-[9px] text-[#91877e]">
+            <p className="mt-0.5 text-[10px] font-semibold text-[#7C6E61]">
               Years in weaving
             </p>
-
           </div>
 
-          <div className="rounded-[14px] border border-[#e7ddd3] bg-white p-[15px] shadow-[0_4px_15px_rgba(60,35,20,0.04)]">
-
-            <p className="text-[10px] text-[#938980]">
+          <div className="rounded-2xl border border-[#E5DCD0] bg-white p-4 shadow-xs transition duration-200 hover:-translate-y-0.5 hover:shadow-md">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-[#8F8175]">
               Rating
             </p>
-
-            <p className="mt-[4px] text-[23px] font-semibold text-[#a16b16]">
+            <p className="mt-1 font-serif text-2xl font-bold text-[#A16B16]">
               4.8
             </p>
-
-            <p className="mt-[2px] text-[9px] text-[#a16b16]">
+            <p className="mt-0.5 text-[10px] font-semibold text-[#A16B16]">
               Customer rating
             </p>
-
           </div>
 
         </div>
 
         {/* Main Profile Grid */}
-        <div className="mt-[18px] grid grid-cols-1 gap-[18px] xl:grid-cols-[1.35fr_0.65fr]">
+        <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-[1.35fr_0.65fr]">
 
           {/* Personal / Business Information */}
-          <section className="rounded-[16px] border border-[#e7ddd3] bg-white p-[20px] shadow-[0_4px_15px_rgba(60,35,20,0.04)]">
+          <section className="rounded-2xl border border-[#E5DCD0] bg-white p-6 shadow-xs">
 
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between border-b border-[#F0E8DF] pb-4">
 
               <div>
-                <h2 className="text-[16px] font-semibold text-[#403a35]">
+                <h2 className="font-serif text-xl font-bold text-[#403A35]">
                   Business Information
                 </h2>
 
-                <p className="mt-[3px] text-[10px] text-[#958c83]">
+                <p className="mt-0.5 text-xs text-[#8F8175]">
                   Your manufacturer details
                 </p>
               </div>
 
-              <div className="flex h-[32px] w-[32px] items-center justify-center rounded-[9px] bg-[#f7eee7] text-[#6b273b]">
-
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#F6EDF1] text-[#4A1525]">
                 <svg
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
-                  strokeWidth="1.7"
-                  className="h-[17px] w-[17px]"
+                  strokeWidth="1.8"
+                  className="h-4 w-4"
                 >
                   <path
                     d="M4 20V5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v15"
                     strokeLinecap="round"
                   />
-
-                  <path
-                    d="M3 20h18"
-                    strokeLinecap="round"
-                  />
-
+                  <path d="M3 20h18" strokeLinecap="round" />
                   <path d="M8 8h2M14 8h2M8 12h2M14 12h2M8 16h2M14 16h2" />
                 </svg>
-
               </div>
 
             </div>
 
-            <div className="mt-[20px] grid grid-cols-1 gap-[16px] sm:grid-cols-2">
+            <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
 
               {/* Business Name */}
               <ProfileField
@@ -387,7 +419,6 @@ export default function Profile() {
 
               {/* Specialization */}
               <div className="sm:col-span-2">
-
                 <ProfileField
                   label="Specialization"
                   name="specialization"
@@ -395,12 +426,10 @@ export default function Profile() {
                   editing={isEditing}
                   onChange={handleChange}
                 />
-
               </div>
 
               {/* Address */}
               <div className="sm:col-span-2">
-
                 <ProfileField
                   label="Business Address"
                   name="address"
@@ -408,7 +437,6 @@ export default function Profile() {
                   editing={isEditing}
                   onChange={handleChange}
                 />
-
               </div>
 
             </div>
@@ -416,53 +444,54 @@ export default function Profile() {
           </section>
 
           {/* Right Side */}
-          <div className="space-y-[18px]">
+          <div className="space-y-6">
 
             {/* Profile Completion */}
-            <section className="rounded-[16px] border border-[#e7ddd3] bg-white p-[20px] shadow-[0_4px_15px_rgba(60,35,20,0.04)]">
+            <section className="rounded-2xl border border-[#E5DCD0] bg-white p-5 shadow-xs">
 
               <div className="flex items-center justify-between">
 
                 <div>
-                  <h2 className="text-[15px] font-semibold text-[#403a35]">
+                  <h2 className="font-serif text-lg font-bold text-[#403A35]">
                     Profile Strength
                   </h2>
 
-                  <p className="mt-[3px] text-[10px] text-[#958c83]">
+                  <p className="mt-0.5 text-xs text-[#8F8175]">
                     Complete your profile
                   </p>
                 </div>
 
-                <span className="text-[18px] font-semibold text-[#4A1525]">
+                <span className="font-serif text-2xl font-bold text-[#4A1525]">
                   85%
                 </span>
 
               </div>
 
-              <div className="mt-[14px] h-[7px] overflow-hidden rounded-full bg-[#eee7df]">
-
-                <div className="h-full w-[85%] rounded-full bg-gradient-to-r from-[#4A1525] to-[#D09229]" />
-
+              <div className="mt-4 h-2 overflow-hidden rounded-full bg-[#EFE6DB]">
+                <div className="h-full w-[85%] rounded-full bg-gradient-to-r from-[#D09229] to-[#4A1525]" />
               </div>
 
-              <p className="mt-[9px] text-[10px] leading-[1.5] text-[#958c83]">
+              <p className="mt-2 text-xs leading-relaxed text-[#8F8175]">
                 Add your business documents and certifications to reach 100%.
               </p>
 
-              <button className="mt-[13px] text-[10px] font-semibold text-[#6b273b] underline underline-offset-2">
+              <button
+                onClick={() => setIsEditing(true)}
+                className="mt-3 text-xs font-bold text-[#4A1525] underline underline-offset-2 hover:text-[#7A263B]"
+              >
                 Complete Profile
               </button>
 
             </section>
 
             {/* Contact */}
-            <section className="rounded-[16px] border border-[#e7ddd3] bg-white p-[20px] shadow-[0_4px_15px_rgba(60,35,20,0.04)]">
+            <section className="rounded-2xl border border-[#E5DCD0] bg-white p-5 shadow-xs">
 
-              <h2 className="text-[15px] font-semibold text-[#403a35]">
+              <h2 className="font-serif text-lg font-bold text-[#403A35] border-b border-[#F0E8DF] pb-3">
                 Contact Information
               </h2>
 
-              <div className="mt-[15px] space-y-[13px]">
+              <div className="mt-4 space-y-3">
 
                 <ContactRow
                   icon="phone"
@@ -487,18 +516,17 @@ export default function Profile() {
             </section>
 
             {/* Account Status */}
-            <section className="rounded-[16px] border border-[#dfe9df] bg-[#f8fcf8] p-[18px]">
+            <section className="rounded-2xl border border-[#D5EADB] bg-[#F4FAF5] p-4 shadow-2xs">
 
-              <div className="flex items-center gap-[10px]">
+              <div className="flex items-center gap-3">
 
-                <div className="flex h-[34px] w-[34px] items-center justify-center rounded-full bg-[#e5f3e7] text-[#3d8154]">
-
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
                   <svg
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
                     strokeWidth="2"
-                    className="h-[17px] w-[17px]"
+                    className="h-4 w-4"
                   >
                     <path
                       d="m5 12 4 4L19 6"
@@ -506,15 +534,14 @@ export default function Profile() {
                       strokeLinejoin="round"
                     />
                   </svg>
-
                 </div>
 
                 <div>
-                  <p className="text-[12px] font-semibold text-[#3d6548]">
+                  <p className="text-xs font-bold text-emerald-900">
                     Account Verified
                   </p>
 
-                  <p className="mt-[2px] text-[9px] text-[#73907a]">
+                  <p className="mt-0.5 text-[11px] text-emerald-700">
                     Your manufacturer account is active.
                   </p>
                 </div>
@@ -528,6 +555,7 @@ export default function Profile() {
         </div>
 
       </main>
+      <RAG />
     </div>
   );
 }
@@ -544,7 +572,7 @@ function ProfileField({
   return (
     <div>
 
-      <label className="mb-[6px] block text-[10px] font-semibold uppercase tracking-[0.5px] text-[#958c83]">
+      <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-[#8F8175]">
         {label}
       </label>
 
@@ -554,15 +582,13 @@ function ProfileField({
           name={name}
           value={value}
           onChange={onChange}
-          className="box-border h-[40px] w-full rounded-[9px] border border-[#d6ccc1] bg-[#fffdfa] px-[11px] text-[12px] text-[#403a35] outline-none transition focus:border-[#8b5b24] focus:ring-2 focus:ring-[#c08a35]/10"
+          className="h-10 w-full rounded-xl border border-[#E2D6C8] bg-[#FAF7F2] px-3 text-xs font-medium text-[#292421] outline-none transition focus:border-[#4A1525] focus:bg-white"
         />
       ) : (
-        <div className="flex min-h-[40px] items-center rounded-[9px] border border-[#eee7df] bg-[#fcfaf7] px-[11px]">
-
-          <p className="break-all text-[12px] text-[#4e4740]">
+        <div className="flex min-h-[40px] items-center rounded-xl border border-[#EAE0D4] bg-[#FAF6F0] px-3.5">
+          <p className="break-all text-xs font-semibold text-[#292421]">
             {value}
           </p>
-
         </div>
       )}
 
@@ -579,8 +605,8 @@ function ContactRow({ icon, label, value }) {
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
-        strokeWidth="1.7"
-        className="h-[16px] w-[16px]"
+        strokeWidth="1.8"
+        className="h-4 w-4"
       >
         <path
           d="M6.5 3.5h3l1.5 4-2 1.5a15 15 0 0 0 6 6l1.5-2 4 1.5v3c0 1-1 2-2 2C10 19.5 4.5 14 4.5 5.5c0-1 1-2 2-2Z"
@@ -595,8 +621,8 @@ function ContactRow({ icon, label, value }) {
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
-        strokeWidth="1.7"
-        className="h-[16px] w-[16px]"
+        strokeWidth="1.8"
+        className="h-4 w-4"
       >
         <rect x="3" y="5" width="18" height="14" rx="2" />
         <path
@@ -612,8 +638,8 @@ function ContactRow({ icon, label, value }) {
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
-        strokeWidth="1.7"
-        className="h-[16px] w-[16px]"
+        strokeWidth="1.8"
+        className="h-4 w-4"
       >
         <path
           d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"
@@ -626,19 +652,19 @@ function ContactRow({ icon, label, value }) {
   };
 
   return (
-    <div className="flex items-center gap-[10px]">
+    <div className="flex items-center gap-3">
 
-      <div className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[9px] bg-[#f7eee7] text-[#6b273b]">
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#FAF0E1] text-[#A76913]">
         {icons[icon]}
       </div>
 
       <div className="min-w-0">
 
-        <p className="text-[9px] uppercase tracking-[0.4px] text-[#a0978f]">
+        <p className="text-[10px] font-bold uppercase tracking-wider text-[#8F8175]">
           {label}
         </p>
 
-        <p className="mt-[2px] truncate text-[11px] font-medium text-[#514941]">
+        <p className="mt-0.5 truncate text-xs font-semibold text-[#292421]">
           {value}
         </p>
 
