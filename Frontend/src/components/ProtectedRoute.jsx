@@ -1,35 +1,29 @@
-import React from "react";
 import { Navigate } from "react-router-dom";
 
-export const getUserRole = (userEmail) => {
-  if (!userEmail) return null;
-  const email = userEmail.trim().toLowerCase();
-
-  if (email === "rithikeswaran.it23@bitsathy.ac.in") {
-    return "manufacturer";
-  }
-
-  if (
-    email === "rithikeswaran2005@gmail.com" ||
-    email === "nadish.it23@bitsathy.ac.in"
-  ) {
-    return "owner";
-  }
-
-  return "customer";
-};
-
 function ProtectedRoute({ children, allowedRole }) {
-  const userEmail = (localStorage.getItem("userEmail") || "").trim().toLowerCase();
-  const storedRole = (localStorage.getItem("userRole") || "").trim().toLowerCase();
+  const userEmail = localStorage.getItem("userEmail");
 
-  const userRole = storedRole || (userEmail ? getUserRole(userEmail) : null);
+  const getUserRole = () => {
+    if (userEmail === "rithikeswaran.it23@bitsathy.ac.in") {
+      return "manufacturer";
+    }
+
+    if (userEmail === "nadish.it23@bitsathy.ac.in") {
+      return "owner";
+    }
+    else{
+        return "customer";
+    }
+    return null;
+  };
+
+  const userRole = getUserRole();
 
   if (!userEmail || !userRole) {
     return <Navigate to="/" replace />;
   }
 
-  if (userRole !== allowedRole.toLowerCase()) {
+  if (userRole !== allowedRole) {
     return <Navigate to={`/${userRole}`} replace />;
   }
 

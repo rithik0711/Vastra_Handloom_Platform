@@ -2,7 +2,7 @@ import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 
 import Login from "./Login";
-import ProtectedRoute, { getUserRole } from "./components/ProtectedRoute";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 // Owner Views
 import Owner from "./Owner/Owner";
@@ -25,17 +25,14 @@ import Customers from "./Manufacturer/Customers";
 import Revenue from "./Manufacturer/Revenue";
 
 function App() {
-  const userEmail = (localStorage.getItem("userEmail") || "").trim().toLowerCase();
-  const storedRole = (localStorage.getItem("userRole") || "").trim().toLowerCase();
-  const userRole = storedRole || (userEmail ? getUserRole(userEmail) : null);
-  const isAuthenticated = Boolean(userEmail && userRole);
+  const userRole = localStorage.getItem("userRole");
 
   return (
     <Routes>
       {/* Auth Entry Route */}
       <Route
         path="/"
-        element={isAuthenticated ? <Navigate to={`/${userRole}`} replace /> : <Login />}
+        element={userRole ? <Navigate to={`/${userRole}`} replace /> : <Login />}
       />
 
       {/* Manufacturer Portal Routes */}
@@ -170,4 +167,4 @@ function App() {
   );
 }
 
-export default App;
+export default App; 
