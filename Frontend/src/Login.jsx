@@ -3,24 +3,14 @@ import { GoogleLogin } from "@react-oauth/google";
 import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 
+import { getUserRole } from "./components/ProtectedRoute";
+
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
   const navigate = useNavigate();
-
-  // Get role based on email
-  const getUserRole = (userEmail) => {
-    if (userEmail === "rithikeswaran.it23@bitsathy.ac.in") {
-      return "manufacturer";
-    }
-
-    if (userEmail === "rithikeswaran2005@gmail.com") {
-      return "owner";
-    }
-    return "customer";
-  };
 
   // Normal Email Login
   const handleSubmit = (e) => {
