@@ -237,49 +237,21 @@ router.get("/bookings", async (req, res) => {
 // POST loom booking in DB
 router.post("/bookings", async (req, res) => {
   try {
-    const {
-      manufacturer,
-      artisanName,
-      loomType,
-      fabricChoice,
-      zariType,
-      customPattern,
-      bodyColor,
-      borderColor,
-      dimensions,
-      notes,
-      targetCompletion,
-      customerEmail,
-      customerName,
-      customerPhone,
-      deliveryAddress,
-      advancePaid,
-      estimatedPrice
-    } = req.body;
+    const { manufacturer, loomType, fabricChoice, customPattern, targetCompletion, customerEmail } = req.body;
     const count = await BookingModel.countDocuments();
     const bookingId = `BK-${500 + count}`;
 
     const newBooking = await BookingModel.create({
       bookingId,
       customerEmail: customerEmail || "customer@example.com",
-      customerName: customerName || "Ananya Deshmukh",
-      customerPhone: customerPhone || "+91 98451 23456",
-      deliveryAddress: deliveryAddress || "",
       manufacturer: manufacturer || "Kathar Weaves",
-      artisanName: artisanName || "Master Weaver",
       loomType: loomType || "Traditional Pit Loom",
-      fabricChoice: fabricChoice || "Pure Mulberry Silk & Gold Zari",
-      zariType: zariType || "Tested Half-Fine Gold Zari",
+      fabricChoice: fabricChoice || "Pure Silk & Zari",
       customPattern: customPattern || "Custom Motif",
-      bodyColor: bodyColor || "Royal Crimson Red",
-      borderColor: borderColor || "Temple Gold Border",
-      dimensions: dimensions || "Standard 6.3m (with blouse)",
-      notes: notes || "",
       bookingDate: new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }),
       targetCompletion: targetCompletion || "In 3 Weeks",
       status: "Confirmed",
-      advancePaid: advancePaid || "₹3,000",
-      estimatedPrice: estimatedPrice || "₹14,500"
+      advancePaid: "₹3,000"
     });
 
     return res.status(201).json({

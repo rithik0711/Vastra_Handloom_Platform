@@ -6,7 +6,6 @@ import {
   Sparkles,
   Award,
   User,
-  Heart,
   LogOut,
   ChevronLeft
 } from "lucide-react";
@@ -15,18 +14,8 @@ export default function CustomerSidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
 
-  const [favCount, setFavCount] = useState(() => {
-    try {
-      const items = JSON.parse(localStorage.getItem("vastra_customer_favorites") || "[]");
-      return items.length;
-    } catch {
-      return 0;
-    }
-  });
-
   const menuItems = [
     { name: "Explore Handlooms", path: "/customer", icon: ShoppingBag },
-    { name: "Liked Products", path: "/customer/wishlist", icon: Heart, badge: favCount > 0 ? favCount : null },
     { name: "My Orders & Tracking", path: "/customer/orders", icon: Clock },
     { name: "Custom Loom Booking", path: "/customer/booking", icon: Sparkles },
     { name: "Master Weavers", path: "/customer/manufacturers", icon: Award },
@@ -93,14 +82,9 @@ export default function CustomerSidebar() {
                   <>
                     <Icon className="h-5 w-5 shrink-0" />
                     {!collapsed && (
-                      <span className="text-[14px] font-medium flex-1">{item.name}</span>
+                      <span className="text-[14px] font-medium">{item.name}</span>
                     )}
-                    {item.badge && !collapsed && (
-                      <span className="rounded-full bg-[#A44747] px-2 py-0.5 text-[10px] font-bold text-white">
-                        {item.badge}
-                      </span>
-                    )}
-                    {isActive && !collapsed && !item.badge && (
+                    {isActive && !collapsed && (
                       <span className="absolute right-[10px] h-[6px] w-[6px] rounded-full bg-[#D09229]" />
                     )}
                   </>

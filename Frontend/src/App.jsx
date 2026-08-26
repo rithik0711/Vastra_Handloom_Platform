@@ -14,8 +14,6 @@ import CustomerOrder from "./Customer/Order";
 import CustomerBooking from "./Customer/Booking";
 import CustomerManufacturers from "./Customer/Manufacturers";
 import CustomerProfile from "./Customer/Profile";
-import ProductDetails from "./Customer/ProductDetails";
-import Wishlist from "./Customer/Wishlist";
 
 // Manufacturer Views
 import Manufacturer from "./Manufacturer/Manufacturer";
@@ -109,22 +107,6 @@ function App() {
         element={
           <ProtectedRoute allowedRole="customer">
             <CustomerDashboard />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/customer/products/:id"
-        element={
-          <ProtectedRoute allowedRole="customer">
-            <ProductDetails />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/customer/wishlist"
-        element={
-          <ProtectedRoute allowedRole="customer">
-            <Wishlist />
           </ProtectedRoute>
         }
       />
