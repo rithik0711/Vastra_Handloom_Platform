@@ -1,42 +1,61 @@
 import React, { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import CustomerSidebar from "./Sidebar";
+import ReadyMadeOrderTracker from "./components/ReadyMadeOrderTracker";
+import CustomLoomOrderTracker from "./components/CustomLoomOrderTracker";
+import ArtisanReviewModal from "./components/ArtisanReviewModal";
 import {
   Package,
-  Clock,
-  CheckCircle,
-  Truck,
-  MapPin,
-  Calendar,
-  IndianRupee,
   Sparkles,
-  ChevronRight
+  CheckCircle2,
+  Layers,
+  ShoppingBag,
+  Clock,
+  RotateCcw,
+  ArrowRight
 } from "lucide-react";
 
 export default function CustomerOrder() {
-  const [orders, setOrders] = useState([
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const [activeTab, setActiveTab] = useState(
+    location.state?.isCustomBooking ? "custom" : "ready_made"
+  );
+
+  const [orders, setOrders] = useState([]);
+  const [bookings, setBookings] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Review modal state
+  const [reviewContext, setReviewContext] = useState(null);
+  const [reviewSuccessAlert, setReviewSuccessAlert] = useState(false);
+  const [reviewedArtisanName, setReviewedArtisanName] = useState("");
+
+  const defaultOrders = [
     {
       id: "ORD-9821",
-      product: "Kanchipuram Pure Silk Saree",
+      orderId: "ORD-9821",
+      product: "Kanchipuram Pure Silk Korvai Saree",
       manufacturer: "Kathar Weaves",
+      artisanName: "Rithikeswaran M",
       price: 8500,
       amount: "₹8,500",
       orderDate: "12 Aug 2026",
-      status: "In Weaving Stage",
+      status: "Dispatched",
       estimatedDelivery: "25 Aug 2026",
       image: "/images/kanchi.png",
-      currentStage: 3,
-      stages: [
-        { name: "Yarn Dyeing", completed: true, date: "13 Aug" },
-        { name: "Loom Setup & Warping", completed: true, date: "15 Aug" },
-        { name: "Artisan Weaving (60%)", completed: false, date: "In Progress" },
-        { name: "Quality Check & Polishing", completed: false, date: "Pending" },
-        { name: "Dispatched", completed: false, date: "Pending" }
-      ]
+      currentStage: 4,
+      deliveryAddress: "Flat 402, Lotus Residency, Indiranagar, Bengaluru",
+      transactionId: "TXN-849201",
+      isReviewed: false
     },
     {
       id: "ORD-8430",
+      orderId: "ORD-8430",
       product: "Traditional Handloom Cotton Saree",
       manufacturer: "Kathar Weaves",
+      artisanName: "Rithikeswaran M",
       price: 4200,
       amount: "₹4,200",
       orderDate: "28 Jul 2026",
@@ -44,26 +63,77 @@ export default function CustomerOrder() {
       estimatedDelivery: "08 Aug 2026",
       image: "/images/cotton.png",
       currentStage: 5,
-      stages: [
-        { name: "Yarn Dyeing", completed: true, date: "29 Jul" },
-        { name: "Loom Setup", completed: true, date: "31 Jul" },
-        { name: "Artisan Weaving", completed: true, date: "04 Aug" },
-        { name: "Quality Check", completed: true, date: "06 Aug" },
-        { name: "Delivered", completed: true, date: "08 Aug" }
-      ]
+      deliveryAddress: "Flat 402, Lotus Residency, Indiranagar, Bengaluru",
+      transactionId: "TXN-719342",
+      isReviewed: false
     }
-  ]);
+  ];
 
-  useEffect(() => {
-    fetch("http://localhost:5000/api/customer/orders")
-      .then((res) => res.json())
-      .then((json) => {
-        if (json.status === "success" && json.data) {
-          setOrders(json.data);
+  const defaultBookings = [
+    {
+      id: "BK-501",
+      bookingId: "BK-501",
+      manufacturer: "Kathar Weaves",
+      artisanName: "Rithikeswaran M",
+      loomType: "Traditional Pit Loom",
+      fabricChoice: "Pure Mulberry Silk & Gold Zari",
+      zariType: "Tested Half-Fine Gold Zari",
+      customPattern: "Peacock Motif with Contrast Pallu",
+      bodyColor: "Crimson Red",
+      borderColor: "Temple Gold Border",
+      bookingDate: "14 Aug 2026",
+      targetCompletion: "10 Sep 2026",
+      status: "Artisan Weaving",
+      currentStage: 4,
+      advancePaid: "₹3,000",
+      estimatedPrice: "₹14,500",
+      deliveryAddress: "Flat 402, Lotus Residency, Indiranagar, Bengaluru",
+      transactionId: "TXN-BESPOKE-901",
+      isReviewed: false
+    }
+  ];
+
+  const fetchData = () => {
+    setLoading(true);
+    const userEmail = localStorage.getItem("userEmail") || "customer@example.com";
+
+    Promise.all([
+      fetch(`http://localhost:5000/api/customer/orders?email=${encodeURIComponent(userEmail)}`),
+      fetch(`http://localhost:5000/api/customer/bookings?email=${encodeURIComponent(userEmail)}`)
+    ])
+      .then(async ([ordersRes, bookingsRes]) => {
+        const ordersJson = await ordersRes.json();
+        const bookingsJson = await bookingsRes.json();
+
+        if (ordersJson.status === "success" && Array.isArray(ordersJson.data) && ordersJson.data.length > 0) {
+          setOrders(ordersJson.data);
+        } else {
+          setOrders(defaultOrders);
+        }
+
+        if (bookingsJson.status === "success" && Array.isArray(bookingsJson.data) && bookingsJson.data.length > 0) {
+          setBookings(bookingsJson.data);
+        } else {
+          setBookings(defaultBookings);
         }
       })
-      .catch((err) => console.log("Using cached customer orders:", err));
+      .catch(() => {
+        setOrders(defaultOrders);
+        setBookings(defaultBookings);
+      })
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchData();
   }, []);
+
+  const handleReviewSuccess = (reviewResult) => {
+    setReviewedArtisanName(reviewResult.artisanName || "Master Weaver");
+    setReviewSuccessAlert(true);
+    setTimeout(() => setReviewSuccessAlert(false), 6000);
+    fetchData();
+  };
 
   return (
     <div className="min-h-screen bg-[#F8F5EF] text-[#292421]">
@@ -71,123 +141,158 @@ export default function CustomerOrder() {
 
       <main className="manufacturer-main min-h-screen px-4 py-6 sm:px-8 sm:py-8 lg:px-10 lg:py-8">
         {/* Header */}
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-[#D09229] ring-4 ring-[#D09229]/20" />
-            <p className="text-[11px] font-bold uppercase tracking-[2px] text-[#9B8068]">
-              Customer Portal
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-[#D09229] ring-4 ring-[#D09229]/20" />
+              <p className="text-[11px] font-bold uppercase tracking-[2px] text-[#9B8068]">
+                Customer Portal
+              </p>
+            </div>
+            <h1 className="mt-1 font-serif text-3xl font-bold tracking-tight text-[#4A1525] sm:text-4xl">
+              Orders & Weaving Tracker
+            </h1>
+            <p className="mt-1 text-xs text-[#7A6D61] sm:text-sm">
+              Live tracking for ready-made handloom dispatches and bespoke custom pit-loom commissions.
             </p>
           </div>
-          <h1 className="mt-1 font-serif text-3xl font-bold tracking-tight text-[#4A1525] sm:text-4xl">
-            My Handloom Orders
-          </h1>
-          <p className="mt-1 text-xs text-[#7A6D61] sm:text-sm">
-            Track the live weaving journey and craftsmanship stages of your sarees.
-          </p>
+
+          <button
+            type="button"
+            onClick={fetchData}
+            className="flex items-center gap-1.5 rounded-xl border border-[#D9CBBF] bg-white px-3.5 py-2 text-xs font-bold text-[#56493F] hover:bg-[#FAF6F0] transition cursor-pointer"
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+            <span>Refresh Status</span>
+          </button>
         </div>
 
-        {/* Orders List */}
-        <div className="mt-8 space-y-6">
-          {orders.map((order) => (
-            <div
-              key={order.id}
-              className="rounded-3xl border border-[#E5DCD0] bg-white p-6 shadow-xs transition hover:shadow-md sm:p-8"
-            >
-              {/* Order Meta Header */}
-              <div className="flex flex-col justify-between gap-4 border-b border-[#F0E8DF] pb-5 sm:flex-row sm:items-center">
-                <div className="flex items-center gap-4">
-                  <img
-                    src={order.image || "/images/kanchi.png"}
-                    alt={order.product}
-                    className="h-16 w-16 rounded-2xl object-cover"
-                    onError={(e) => {
-                      e.target.onerror = null;
-                      e.target.src = "/images/kanchi.png";
-                    }}
-                  />
-                  <div>
-                    <span className="text-[11px] font-bold text-[#A16B16]">
-                      #{order.id} • Ordered on {order.orderDate}
-                    </span>
-                    <h3 className="font-serif text-xl font-bold text-[#292421]">
-                      {order.product}
-                    </h3>
-                    <p className="text-xs text-[#7A6D61]">Woven by {order.manufacturer}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-4 sm:text-right">
-                  <div>
-                    <p className="text-[10px] uppercase font-bold text-[#8F8175]">Total Amount</p>
-                    <p className="font-serif text-lg font-bold text-[#4A1525]">{order.amount}</p>
-                  </div>
-                  <span
-                    className={`rounded-full px-3 py-1 text-xs font-bold ${
-                      order.status === "Delivered"
-                        ? "bg-[#EAF6ED] text-[#2E7D32] border border-[#C8E6C9]"
-                        : "bg-[#FFF4DF] text-[#A16B16] border border-[#F5DEC0]"
-                    }`}
-                  >
-                    {order.status}
-                  </span>
-                </div>
-              </div>
-
-              {/* Progress Stepper */}
-              <div className="mt-6">
-                <p className="text-xs font-bold uppercase tracking-wider text-[#9B8068]">
-                  Artisan Production Journey
+        {/* Payment / Order Success Notice */}
+        {location.state?.orderSuccess && (
+          <div className="mt-6 flex items-center justify-between rounded-2xl border border-emerald-300 bg-emerald-50 p-4 text-emerald-800 shadow-sm animate-fadeIn">
+            <div className="flex items-center gap-3">
+              <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0" />
+              <div>
+                <p className="text-xs font-bold">Transaction Authorized Successfully!</p>
+                <p className="text-[11px] text-emerald-700">
+                  Transaction ID: <strong className="font-mono">{location.state.transactionId}</strong>. The weaver has received your order.
                 </p>
-
-                <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-5">
-                  {order.stages &&
-                    order.stages.map((stage, idx) => {
-                      const isComplete = stage.completed;
-                      const isCurrent = idx + 1 === order.currentStage;
-                      return (
-                        <div
-                          key={stage.name}
-                          className={`relative flex flex-col rounded-2xl border p-3.5 transition ${
-                            isComplete
-                              ? "border-emerald-200 bg-emerald-50/50"
-                              : isCurrent
-                              ? "border-[#D09229] bg-[#FAF0E1]/40"
-                              : "border-[#EFE5DB] bg-[#FAF6F0]"
-                          }`}
-                        >
-                          <div className="flex items-center justify-between">
-                            <span
-                              className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${
-                                isComplete
-                                  ? "bg-emerald-600 text-white"
-                                  : isCurrent
-                                  ? "bg-[#D09229] text-white animate-pulse"
-                                  : "bg-[#E0D4C7] text-[#7A6D61]"
-                              }`}
-                            >
-                              {idx + 1}
-                            </span>
-                            <span className="text-[10px] text-[#8F8175]">{stage.date}</span>
-                          </div>
-                          <p
-                            className={`mt-2 text-xs font-bold ${
-                              isComplete
-                                ? "text-emerald-900"
-                                : isCurrent
-                                ? "text-[#4A1525]"
-                                : "text-[#8F8175]"
-                            }`}
-                          >
-                            {stage.name}
-                          </p>
-                        </div>
-                      );
-                    })}
-                </div>
               </div>
             </div>
-          ))}
+          </div>
+        )}
+
+        {/* Review Submitted Banner */}
+        {reviewSuccessAlert && (
+          <div className="mt-6 flex items-center gap-3 rounded-2xl border border-emerald-300 bg-emerald-50 p-4 text-emerald-800 shadow-sm animate-fadeIn">
+            <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0" />
+            <div>
+              <p className="text-xs font-bold">Review Submitted for Master Weaver {reviewedArtisanName}!</p>
+              <p className="text-[11px] text-emerald-700">
+                Your rating and craftsmanship feedback is now recorded and published on their artisan profile.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Segmented Dual Tracker Switcher */}
+        <div className="mt-8 flex rounded-2xl bg-[#EFE6DB] p-1.5 max-w-md">
+          <button
+            type="button"
+            onClick={() => setActiveTab("ready_made")}
+            className={`flex-1 flex items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-bold transition cursor-pointer ${
+              activeTab === "ready_made"
+                ? "bg-[#4A1525] text-white shadow-xs"
+                : "text-[#6B5E52] hover:text-[#4A1525]"
+            }`}
+          >
+            <Package className="h-4 w-4" />
+            <span>Ready-Made Orders ({orders.length})</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("custom")}
+            className={`flex-1 flex items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-bold transition cursor-pointer ${
+              activeTab === "custom"
+                ? "bg-[#4A1525] text-white shadow-xs"
+                : "text-[#6B5E52] hover:text-[#4A1525]"
+            }`}
+          >
+            <Sparkles className="h-4 w-4 text-[#D09229]" />
+            <span>Custom Loom Orders ({bookings.length})</span>
+          </button>
         </div>
+
+        {/* Trackers List */}
+        <div className="mt-6 space-y-6">
+          {activeTab === "ready_made" ? (
+            /* Ready-Made Orders Section */
+            orders.length > 0 ? (
+              orders.map((order) => (
+                <ReadyMadeOrderTracker
+                  key={order.orderId || order.id || order._id}
+                  order={order}
+                  onReviewArtisan={(ctx) => setReviewContext(ctx)}
+                />
+              ))
+            ) : (
+              <div className="mt-8 rounded-3xl border border-[#E5DCD0] bg-white p-12 text-center shadow-xs">
+                <Package className="h-10 w-10 text-[#A16B16] mx-auto" />
+                <h3 className="mt-3 font-serif text-xl font-bold text-[#4A1525]">
+                  No Ready-Made Orders Found
+                </h3>
+                <p className="mt-1 text-xs text-[#7A6D61]">
+                  Explore our authentic handloom collection and order directly from master artisans.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => navigate("/customer")}
+                  className="mt-5 rounded-xl bg-gradient-to-r from-[#4A1525] to-[#7A263B] px-5 py-2.5 text-xs font-bold text-white shadow-xs hover:opacity-95 transition cursor-pointer"
+                >
+                  Browse Handloom Weaves
+                </button>
+              </div>
+            )
+          ) : (
+            /* Bespoke Custom Loom Orders Section */
+            bookings.length > 0 ? (
+              bookings.map((booking) => (
+                <CustomLoomOrderTracker
+                  key={booking.bookingId || booking.id || booking._id}
+                  booking={booking}
+                  onReviewArtisan={(ctx) => setReviewContext(ctx)}
+                />
+              ))
+            ) : (
+              <div className="mt-8 rounded-3xl border border-[#E5DCD0] bg-white p-12 text-center shadow-xs">
+                <Sparkles className="h-10 w-10 text-[#D09229] mx-auto" />
+                <h3 className="mt-3 font-serif text-xl font-bold text-[#4A1525]">
+                  No Custom Loom Bookings Yet
+                </h3>
+                <p className="mt-1 text-xs text-[#7A6D61]">
+                  Commission a bridal or heirloom saree customized to your unique colors, zari, and motifs.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => navigate("/customer/booking")}
+                  className="mt-5 rounded-xl bg-gradient-to-r from-[#4A1525] to-[#7A263B] px-5 py-2.5 text-xs font-bold text-white shadow-xs hover:opacity-95 transition cursor-pointer"
+                >
+                  Book Dedicated Loom Slot
+                </button>
+              </div>
+            )
+          )}
+        </div>
+
+        {/* Master Weaver Review Modal */}
+        {reviewContext && (
+          <ArtisanReviewModal
+            reviewContext={reviewContext}
+            onClose={() => setReviewContext(null)}
+            onSubmitSuccess={handleReviewSuccess}
+          />
+        )}
       </main>
     </div>
   );
