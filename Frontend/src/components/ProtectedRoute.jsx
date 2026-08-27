@@ -14,7 +14,7 @@ function ProtectedRoute({ children, allowedRole }) {
     else{
         return "customer";
     }
-    return null;
+    // return null;
   };
 
   const userRole = getUserRole();
