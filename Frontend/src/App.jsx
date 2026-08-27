@@ -14,6 +14,10 @@ import CustomerOrder from "./Customer/Order";
 import CustomerBooking from "./Customer/Booking";
 import CustomerManufacturers from "./Customer/Manufacturers";
 import CustomerProfile from "./Customer/Profile";
+import ProductDetails from "./Customer/ProductDetails";
+import Wishlist from "./Customer/Wishlist";
+import ArtisanDetails from "./Customer/ArtisanDetails";
+import Payment from "./Customer/Payment";
 
 // Manufacturer Views
 import Manufacturer from "./Manufacturer/Manufacturer";
@@ -111,6 +115,38 @@ function App() {
         }
       />
       <Route
+        path="/customer/products/:id"
+        element={
+          <ProtectedRoute allowedRole="customer">
+            <ProductDetails />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/customer/artisan/:id"
+        element={
+          <ProtectedRoute allowedRole="customer">
+            <ArtisanDetails />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/customer/payment"
+        element={
+          <ProtectedRoute allowedRole="customer">
+            <Payment />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/customer/wishlist"
+        element={
+          <ProtectedRoute allowedRole="customer">
+            <Wishlist />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/customer/orders"
         element={
           <ProtectedRoute allowedRole="customer">
@@ -167,4 +203,4 @@ function App() {
   );
 }
 
-export default App; 
+export default App;
