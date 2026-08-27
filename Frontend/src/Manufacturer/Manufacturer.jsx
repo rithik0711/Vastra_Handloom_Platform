@@ -298,15 +298,8 @@ const Manufacturer = () => {
               <span>Add Product</span>
             </button>
 
-            <div className="hidden h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#4A1525] to-[#D09229] font-serif text-xs font-bold text-white shadow-xs sm:flex">
-              {initials}
-            </div>
           </div>
         </header>
-
-        {/* =================================================
-            HERO BANNER
-        ================================================= */}
         <section className="relative mt-6 overflow-hidden rounded-2xl bg-gradient-to-br from-[#411220] via-[#5F192E] to-[#7D293E] p-6 text-white shadow-[0_12px_36px_rgba(74,21,37,0.18)] sm:p-8">
           <div className="pointer-events-none absolute -right-16 -top-16 h-72 w-72 rounded-full border border-white/10" />
           <div className="pointer-events-none absolute bottom-0 right-1/4 h-48 w-48 rounded-full bg-[#D09229]/15 blur-2xl" />
@@ -453,11 +446,10 @@ const Manufacturer = () => {
 
                           <div className="relative flex h-full w-full items-end justify-center">
                             <div
-                              className={`w-full max-w-[36px] rounded-t-lg transition-all duration-300 group-hover:scale-y-[1.03] ${
-                                isLatest
+                              className={`w-full max-w-[36px] rounded-t-lg transition-all duration-300 group-hover:scale-y-[1.03] ${isLatest
                                   ? "bg-gradient-to-t from-[#4A1525] via-[#681E34] to-[#D09229] shadow-xs"
                                   : "bg-[#E6DBD1] group-hover:bg-[#D9CCC0]"
-                              }`}
+                                }`}
                               style={{
                                 height: `${Math.max(item.value, 8)}%`
                               }}
@@ -585,9 +577,8 @@ const Manufacturer = () => {
                             {order.amount}
                           </p>
                           <span
-                            className={`mt-1 inline-block rounded-full border px-2 py-0.5 text-[9px] font-bold ${
-                              order.statusClass || "bg-[#FFF4DF] text-[#A16B16] border-[#F5DEC0]"
-                            }`}
+                            className={`mt-1 inline-block rounded-full border px-2 py-0.5 text-[9px] font-bold ${order.statusClass || "bg-[#FFF4DF] text-[#A16B16] border-[#F5DEC0]"
+                              }`}
                           >
                             {order.status}
                           </span>

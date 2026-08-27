@@ -15,7 +15,6 @@ export default function Login() {
     if (userEmail === "rithikeswaran.it23@bitsathy.ac.in") {
       return "manufacturer";
     }
-
     if (userEmail === "rithikeswaran2005@gmail.com") {
       return "owner";
     }

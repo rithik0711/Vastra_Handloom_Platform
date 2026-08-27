@@ -6,6 +6,7 @@ const productRoutes = require("./Products");
 const orderRoutes = require("./Orders");
 const profileRoutes = require("./Profile");
 const customerRoutes = require("./Customers");
+const designRoutes = require("./Design");
 
 const router = express.Router();
 
@@ -271,5 +272,6 @@ router.use("/products", productRoutes);
 router.use("/orders", orderRoutes);
 router.use("/profile", profileRoutes);
 router.use("/customers", customerRoutes);
+router.use("/design", designRoutes);
 
 module.exports = router;

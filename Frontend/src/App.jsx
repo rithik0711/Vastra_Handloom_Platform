@@ -4,16 +4,6 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "./Login";
 import ProtectedRoute from "./components/ProtectedRoute";
 
-// Owner Views
-import Owner from "./Owner/Owner";
-import Factory from "./Owner/Factory";
-
-// Customer Views
-import CustomerDashboard from "./Customer/Dashboard";
-import CustomerOrder from "./Customer/Order";
-import CustomerBooking from "./Customer/Booking";
-import CustomerManufacturers from "./Customer/Manufacturers";
-import CustomerProfile from "./Customer/Profile";
 
 // Manufacturer Views
 import Manufacturer from "./Manufacturer/Manufacturer";
@@ -23,6 +13,8 @@ import Profile from "./Manufacturer/Profile";
 import Gallery from "./Manufacturer/Gallery";
 import Customers from "./Manufacturer/Customers";
 import Revenue from "./Manufacturer/Revenue";
+import Design from "./Manufacturer/Design";
+import CreateDesign from "./Manufacturer/CreateDesign";
 
 function App() {
   const userRole = localStorage.getItem("userRole");
@@ -77,6 +69,22 @@ function App() {
         }
       />
       <Route
+        path="/manufacturer/design"
+        element={
+          <ProtectedRoute allowedRole="manufacturer">
+            <Design />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/manufacturer/create-design"
+        element={
+          <ProtectedRoute allowedRole="manufacturer">
+            <CreateDesign />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/manufacturer/revenue"
         element={
           <ProtectedRoute allowedRole="manufacturer">
@@ -102,64 +110,64 @@ function App() {
       />
 
       {/* Customer Portal Routes */}
-      <Route
+      {/* <Route
         path="/customer"
         element={
           <ProtectedRoute allowedRole="customer">
             <CustomerDashboard />
           </ProtectedRoute>
         }
-      />
-      <Route
+      /> */}
+      {/* <Route
         path="/customer/orders"
         element={
           <ProtectedRoute allowedRole="customer">
             <CustomerOrder />
           </ProtectedRoute>
         }
-      />
-      <Route
+      /> */}
+      {/* <Route
         path="/customer/booking"
         element={
           <ProtectedRoute allowedRole="customer">
             <CustomerBooking />
           </ProtectedRoute>
         }
-      />
-      <Route
+      /> */}
+      {/* <Route
         path="/customer/manufacturers"
         element={
           <ProtectedRoute allowedRole="customer">
             <CustomerManufacturers />
           </ProtectedRoute>
         }
-      />
-      <Route
+      /> */}
+      {/* <Route
         path="/customer/profile"
         element={
           <ProtectedRoute allowedRole="customer">
             <CustomerProfile />
           </ProtectedRoute>
         }
-      />
+      /> */}
 
       {/* Owner Administration Portal Routes */}
-      <Route
+      {/* <Route
         path="/owner"
         element={
           <ProtectedRoute allowedRole="owner">
             <Owner />
           </ProtectedRoute>
         }
-      />
-      <Route
+      /> */}
+      {/* <Route
         path="/owner/factories"
         element={
           <ProtectedRoute allowedRole="owner">
             <Factory />
           </ProtectedRoute>
         }
-      />
+      /> */}
 
       {/* Catch-All Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />
