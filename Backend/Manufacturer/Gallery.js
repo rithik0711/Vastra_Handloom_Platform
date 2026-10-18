@@ -30,8 +30,12 @@ router.get("/", async (req, res) => {
     const { category, search, manufacturerId } = req.query;
 
     let query = {};
-    if (manufacturerId && manufacturerId.trim()) {
-      query.manufacturerId = manufacturerId.trim();
+    if (manufacturerId && manufacturerId.trim() && manufacturerId !== "All") {
+      const mTrim = manufacturerId.trim();
+      query.$or = [
+        { manufacturerId: { $regex: new RegExp(`^${mTrim}$`, "i") } },
+        { manufacturerId: { $regex: new RegExp(mTrim, "i") } }
+      ];
     }
     if (category && category !== "All") {
       query.category = { $regex: new RegExp(`^${category}$`, "i") };

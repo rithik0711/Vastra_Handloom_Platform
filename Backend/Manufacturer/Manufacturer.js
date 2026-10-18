@@ -6,7 +6,7 @@ const productRoutes = require("./Products");
 const orderRoutes = require("./Orders");
 const profileRoutes = require("./Profile");
 const customerRoutes = require("./Customers");
-const designRoutes = require("./Design");
+const revenueRoutes = require("./Revenue");
 
 const router = express.Router();
 
@@ -43,18 +43,66 @@ const getStatusClass = (status) => {
 router.get("/stats", async (req, res) => {
   try {
     const manufacturerId = (
-      req.query.manufacturerId || "rithikeswaran.it23@bitsathy.ac.in"
+      req.query.manufacturerId ||
+      req.query.id ||
+      req.headers["x-manufacturer-id"] ||
+      "rithikeswaran.it23@bitsathy.ac.in"
     ).trim();
 
-    const Order = mongoose.connection.collection("Orders");
+    const Bookings = mongoose.connection.collection("Bookings");
     const Product = mongoose.connection.collection("Products");
     const Manufacturer = mongoose.connection.collection("Manufacturer");
 
-    const [orders, products, profile] = await Promise.all([
-      Order.find({
+    // 1. Resolve Manufacturer
+    let profile = null;
+    if (mongoose.Types.ObjectId.isValid(manufacturerId) && manufacturerId.length === 24) {
+      profile = await Manufacturer.findOne({ _id: new mongoose.Types.ObjectId(manufacturerId) });
+    }
+    if (!profile) {
+      profile = await Manufacturer.findOne({
         $or: [
-          { manufacturerId: manufacturerId },
-          { manufacturerId: { $regex: new RegExp(`^${manufacturerId}$`, "i") } }
+          { email: { $regex: new RegExp(`^${manufacturerId}$`, "i") } },
+          { businessName: { $regex: new RegExp(`^${manufacturerId}$`, "i") } },
+          { ownerName: { $regex: new RegExp(`^${manufacturerId}$`, "i") } }
+        ]
+      });
+    }
+    if (!profile && (manufacturerId.toLowerCase().includes("rithik") || manufacturerId.toLowerCase().includes("kathar"))) {
+      profile = await Manufacturer.findOne({
+        $or: [{ email: { $regex: /rithikeswaran/i } }, { businessName: { $regex: /kathar/i } }]
+      });
+    }
+
+    // 2. Build ID variants
+    const mVariants = new Set([
+      manufacturerId,
+      "kathar_weaves",
+      "Kathar Weaves",
+      "rithikeswaran.it23@bitsathy.ac.in",
+      "Rithikeswaran M"
+    ]);
+
+    if (profile) {
+      if (profile._id) mVariants.add(String(profile._id));
+      if (profile.email) mVariants.add(profile.email);
+      if (profile.businessName) {
+        mVariants.add(profile.businessName);
+        mVariants.add(profile.businessName.toLowerCase().replace(/\s+/g, "_"));
+      }
+      if (profile.ownerName) mVariants.add(profile.ownerName);
+    }
+
+    const variantsArr = Array.from(mVariants);
+
+    // 3. Fetch Orders, Products from MongoDB
+    const [orders, products] = await Promise.all([
+      Bookings.find({
+        $or: [
+          { manufacturerId: { $in: variantsArr } },
+          { manufacturer: { $in: variantsArr } },
+          { artisanName: { $in: variantsArr } },
+          { manufacturerId: { $regex: new RegExp(`^${manufacturerId}$`, "i") } },
+          { manufacturer: { $regex: new RegExp(`^${manufacturerId}$`, "i") } }
         ]
       })
         .sort({ createdAt: -1 })
@@ -62,57 +110,48 @@ router.get("/stats", async (req, res) => {
 
       Product.find({
         $or: [
-          { manufacturerId: manufacturerId },
-          { manufacturerId: { $regex: new RegExp(`^${manufacturerId}$`, "i") } }
+          { manufacturerId: { $in: variantsArr } },
+          { manufacturer: { $in: variantsArr } }
         ]
       })
         .sort({ createdAt: -1 })
-        .toArray(),
-
-      Manufacturer.findOne({
-        email: { $regex: new RegExp(`^${manufacturerId}$`, "i") }
-      })
+        .toArray()
     ]);
 
     const totalProducts = products.length;
     const totalOrders = orders.length;
-
-    const pendingOrders = orders.filter(
-      (o) =>
-        o.status === "Pending" ||
-        o.status === "In Production" ||
-        o.status === "Quality Check"
-    ).length;
 
     const completedOrders = orders.filter(
       (o) => o.status === "Completed" || o.status === "Delivered"
     ).length;
 
     const inProductionOrders = orders.filter(
-      (o) => o.status === "In Production"
+      (o) =>
+        o.status === "In Production" ||
+        (o.status && o.status.toLowerCase().includes("production"))
     ).length;
+
     const qualityCheckOrders = orders.filter(
-      (o) => o.status === "Quality Check"
+      (o) =>
+        o.status === "Quality Check" ||
+        (o.status && o.status.toLowerCase().includes("inspection"))
     ).length;
+
     const strictlyPendingOrders = orders.filter(
-      (o) => o.status === "Pending"
+      (o) =>
+        o.status === "Pending" ||
+        o.status === "Order Placed" ||
+        o.status === "Custom Request Confirmed" ||
+        (o.status && (o.status.toLowerCase().includes("placed") || o.status.toLowerCase().includes("confirm")))
     ).length;
+
+    const pendingOrders = totalOrders - completedOrders;
 
     // Calculate total and monthly revenue
     let totalRevenueSum = 0;
     const months = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec"
+      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
     ];
     const monthlyMap = {};
     months.forEach((m) => {
@@ -120,11 +159,38 @@ router.get("/stats", async (req, res) => {
     });
 
     orders.forEach((o) => {
-      const amt = parseAmount(o.amount);
-      totalRevenueSum += amt;
+      const amt =
+        parseAmount(o.amount) ||
+        parseAmount(o.price) ||
+        parseAmount(o.advancePaid) ||
+        0;
 
-      if (o.date) {
-        const parts = String(o.date).split(" ");
+      // Count if paid, advance paid, or completed
+      if (
+        o.payment === "Paid" ||
+        o.paymentStatus === "Paid" ||
+        o.paymentStatus === "Advance Paid" ||
+        o.status === "Completed" ||
+        o.status === "Delivered" ||
+        !o.status
+      ) {
+        totalRevenueSum += amt;
+      }
+
+      const rawDate =
+        o.orderDate ||
+        o.bookingDate ||
+        o.date ||
+        (o.createdAt
+          ? new Date(o.createdAt).toLocaleDateString("en-GB", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric"
+            })
+          : "");
+
+      if (rawDate) {
+        const parts = String(rawDate).trim().split(" ");
         if (parts.length >= 2) {
           const monthKey = parts[1];
           if (monthlyMap[monthKey] !== undefined) {
@@ -135,13 +201,13 @@ router.get("/stats", async (req, res) => {
     });
 
     const maxMonthRev = Math.max(...Object.values(monthlyMap), 1);
-    const monthlyRevenueChart = months.slice(0, 8).map((m) => ({
+    const monthlyRevenueChart = months.map((m) => ({
       month: m,
       revenue: monthlyMap[m] || 0,
-      value: Math.max(
-        Math.round(((monthlyMap[m] || 0) / maxMonthRev) * 100),
-        10
-      )
+      value:
+        monthlyMap[m] > 0
+          ? Math.max(Math.round(((monthlyMap[m] || 0) / maxMonthRev) * 100), 20)
+          : 6
     }));
 
     // Format revenue string
@@ -270,8 +336,10 @@ router.get("/stats", async (req, res) => {
 router.use("/gallery", galleryRoutes);
 router.use("/products", productRoutes);
 router.use("/orders", orderRoutes);
+router.use("/booking", orderRoutes);
+router.use("/bookings", orderRoutes);
 router.use("/profile", profileRoutes);
 router.use("/customers", customerRoutes);
-router.use("/design", designRoutes);
+router.use("/revenue", revenueRoutes);
 
 module.exports = router;

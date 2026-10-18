@@ -10,7 +10,8 @@ import LogoutIcon from "@mui/icons-material/Logout";
 import CollectionsIcon from '@mui/icons-material/Collections';
 import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
 import PeopleIcon from '@mui/icons-material/People';
-import PolylineIcon from '@mui/icons-material/Polyline'; export default function Sidebar() {
+
+export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(() => {
     const saved = localStorage.getItem("manufacturerSidebarCollapsed");
     return saved ? JSON.parse(saved) : false;
@@ -57,11 +58,6 @@ import PolylineIcon from '@mui/icons-material/Polyline'; export default function
       name: "Customers",
       path: "/manufacturer/customers",
       icon: PeopleIcon,
-    },
-    {
-      name: "Designs",
-      path: "/manufacturer/design",
-      icon: PolylineIcon,
     },
     {
       name: "Revenue",

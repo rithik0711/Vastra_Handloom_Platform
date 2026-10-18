@@ -211,65 +211,77 @@ export default function Customers() {
           <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
             {/* Customer List Cards */}
             <div className="lg:col-span-2 space-y-3">
-              {filtered.map((customer) => (
-                <div
-                  key={customer.id || customer._id}
-                  onClick={() => {
-                    setSelectedCustomer(customer);
-                    setNoteInput(customer.notes || "");
-                  }}
-                  className={`group flex cursor-pointer flex-col justify-between gap-4 rounded-2xl border p-5 transition duration-200 hover:-translate-y-0.5 hover:shadow-md sm:flex-row sm:items-center ${selectedCustomer?.id === customer.id || selectedCustomer?._id === customer._id
-                    ? "border-[#4A1525] bg-[#FDF9F6] shadow-sm"
-                    : "border-[#E5DCD0] bg-white"
+              {filtered.map((customer) => {
+                const isSelected = selectedCustomer?.id === customer.id || selectedCustomer?._id === customer._id;
+                return (
+                  <div
+                    key={customer.id || customer._id}
+                    onClick={() => {
+                      if (isSelected) {
+                        setSelectedCustomer(null);
+                      } else {
+                        setSelectedCustomer(customer);
+                        setNoteInput(customer.notes || "");
+                      }
+                    }}
+                    className={`group flex cursor-pointer flex-col justify-between gap-4 rounded-2xl border p-5 transition duration-200 hover:-translate-y-0.5 hover:shadow-md sm:flex-row sm:items-center ${
+                      isSelected
+                        ? "border-[#4A1525] bg-[#FDF9F6] shadow-sm ring-1 ring-[#4A1525]/20"
+                        : "border-[#E5DCD0] bg-white"
                     }`}
-                >
-                  <div className="flex items-center gap-4">
-
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-serif text-base font-bold text-[#292421] group-hover:text-[#4A1525] transition-colors">
-                          {customer.name}
-                        </h3>
-                        <span
-                          className={`rounded-full px-2 py-0.5 text-[9px] font-bold ${customer.status === "VIP"
-                            ? "bg-[#FAF0E1] text-[#A16B16] border border-[#F5DEC0]"
-                            : customer.status === "Active"
-                              ? "bg-[#EAF6ED] text-[#2E7D32] border border-[#C8E6C9]"
-                              : "bg-[#FBEEEE] text-[#A44747] border border-[#F4CFCF]"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-serif text-base font-bold text-[#292421] group-hover:text-[#4A1525] transition-colors">
+                            {customer.name}
+                          </h3>
+                          <span
+                            className={`rounded-full px-2 py-0.5 text-[9px] font-bold ${
+                              customer.status === "VIP"
+                                ? "bg-[#FAF0E1] text-[#A16B16] border border-[#F5DEC0]"
+                                : customer.status === "Active"
+                                ? "bg-[#EAF6ED] text-[#2E7D32] border border-[#C8E6C9]"
+                                : "bg-[#FBEEEE] text-[#A44747] border border-[#F4CFCF]"
                             }`}
-                        >
-                          {customer.status}
-                        </span>
-                      </div>
-                      <div className="mt-1 flex flex-wrap items-center gap-3 text-[11px] text-[#7A6D61]">
-                        <span className="flex items-center gap-1">
-                          <Mail className="h-3 w-3 text-[#9B8F84]" />
-                          {customer.email}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Phone className="h-3 w-3 text-[#9B8F84]" />
-                          {customer.phone}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <MapPin className="h-3 w-3 text-[#9B8F84]" />
-                          {customer.location}
-                        </span>
+                          >
+                            {customer.status}
+                          </span>
+                        </div>
+                        <div className="mt-1 flex flex-wrap items-center gap-3 text-[11px] text-[#7A6D61]">
+                          <span className="flex items-center gap-1">
+                            <Mail className="h-3 w-3 text-[#9B8F84]" />
+                            {customer.email}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Phone className="h-3 w-3 text-[#9B8F84]" />
+                            {customer.phone}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <MapPin className="h-3 w-3 text-[#9B8F84]" />
+                            {customer.location}
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="flex items-center justify-between border-t border-[#F0E8DF] pt-3 sm:border-t-0 sm:pt-0 sm:text-right">
-                    <div>
-                      <p className="text-[10px] uppercase font-bold text-[#8F8175]">Total Spent</p>
-                      <p className="font-serif text-sm font-bold text-[#4A1525]">
-                        ₹{Number(customer.totalSpent || 0).toLocaleString("en-IN")}
-                      </p>
-                      <p className="text-[10px] text-[#8F8175]">{customer.totalOrders} Orders</p>
+                    <div className="flex items-center justify-between border-t border-[#F0E8DF] pt-3 sm:border-t-0 sm:pt-0 sm:text-right">
+                      <div>
+                        <p className="text-[10px] uppercase font-bold text-[#8F8175]">Total Spent</p>
+                        <p className="font-serif text-sm font-bold text-[#4A1525]">
+                          ₹{Number(customer.totalSpent || 0).toLocaleString("en-IN")}
+                        </p>
+                        <p className="text-[10px] text-[#8F8175]">{customer.totalOrders} Orders</p>
+                      </div>
+                      <ChevronRight
+                        className={`ml-3 hidden h-4 w-4 text-[#B8AAA0] transition-transform duration-200 sm:block ${
+                          isSelected ? "rotate-90 text-[#4A1525]" : "group-hover:text-[#4A1525]"
+                        }`}
+                      />
                     </div>
-                    <ChevronRight className="ml-3 hidden h-4 w-4 text-[#B8AAA0] group-hover:text-[#4A1525] sm:block" />
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* Customer Detail & Notes Pane */}
@@ -277,23 +289,31 @@ export default function Customers() {
               {selectedCustomer ? (
                 <div>
                   <div className="flex items-center justify-between border-b border-[#F0E8DF] pb-4">
-                    <div className="flex items-center gap-3">
-
-                      <div>
-                        <h3 className="font-serif text-lg font-bold text-[#292421]">
-                          {selectedCustomer.name}
-                        </h3>
-                        <p className="text-xs text-[#7A6D61]">{selectedCustomer.location}</p>
-                      </div>
+                    <div>
+                      <h3 className="font-serif text-lg font-bold text-[#292421]">
+                        {selectedCustomer.name}
+                      </h3>
+                      <p className="text-xs text-[#7A6D61]">{selectedCustomer.location}</p>
                     </div>
-                    <span
-                      className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${selectedCustomer.status === "VIP"
-                        ? "bg-[#FAF0E1] text-[#A16B16]"
-                        : "bg-[#EAF6ED] text-[#2E7D32]"
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+                          selectedCustomer.status === "VIP"
+                            ? "bg-[#FAF0E1] text-[#A16B16]"
+                            : "bg-[#EAF6ED] text-[#2E7D32]"
                         }`}
-                    >
-                      {selectedCustomer.status}
-                    </span>
+                      >
+                        {selectedCustomer.status}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedCustomer(null)}
+                        className="rounded-lg p-1 text-[#8F8175] hover:bg-[#FAF6F0] hover:text-[#4A1525] transition cursor-pointer"
+                        title="Collapse pane"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
                   </div>
 
                   <div className="mt-4 space-y-2.5 text-xs">

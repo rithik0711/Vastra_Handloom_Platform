@@ -13,7 +13,7 @@ const app = express();
 // Middleware with 50MB payload limit for high-res photo uploads
 app.use(
     cors({
-        origin: ["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:3000"],
+        origin: true,
         credentials: true
     })
 );
@@ -66,7 +66,7 @@ const PORT = process.env.PORT || 5000;
 const startServer = async () => {
     await connectDB();
 
-    app.listen(PORT, () => {
+    app.listen(PORT, "0.0.0.0", () => {
         console.log(`Vastra Backend running on http://localhost:${PORT}`);
     });
 };

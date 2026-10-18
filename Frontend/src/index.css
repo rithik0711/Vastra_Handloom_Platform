@@ -41,3 +41,18 @@ body,
     margin-left: 78px;
   }
 }
+
+.customer-main {
+  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-left: 250px;
+}
+
+body.customer-sidebar-collapsed .customer-main {
+  margin-left: 78px;
+}
+
+@media (max-width: 1023px) {
+  .customer-main {
+    margin-left: 78px;
+  }
+}

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import RAG from "./RAG";
 import {
@@ -23,6 +24,7 @@ import {
 } from "lucide-react";
 
 export default function Orders() {
+  const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -40,7 +42,7 @@ export default function Orders() {
     try {
       setLoading(true);
       const response = await fetch(
-        `http://localhost:5000/api/manufacturer/orders?manufacturerId=${encodeURIComponent(
+        `http://localhost:5000/api/manufacturer/booking?manufacturerId=${encodeURIComponent(
           userEmail
         )}`
       );
@@ -102,7 +104,7 @@ export default function Orders() {
     try {
       setUpdatingId(orderId);
       const response = await fetch(
-        `http://localhost:5000/api/manufacturer/orders/${orderId}/status`,
+        `http://localhost:5000/api/manufacturer/booking/${orderId}/status`,
         {
           method: "PATCH",
           headers: {
@@ -264,8 +266,8 @@ export default function Orders() {
                 type="button"
                 onClick={() => setStatusFilter(st)}
                 className={`rounded-xl px-3.5 py-2 text-xs font-bold transition ${statusFilter === st
-                    ? "bg-[#4A1525] text-white"
-                    : "border border-[#E5DCD0] bg-[#FAF6F0] text-[#6B5E52]"
+                  ? "bg-[#4A1525] text-white"
+                  : "border border-[#E5DCD0] bg-[#FAF6F0] text-[#6B5E52]"
                   }`}
               >
                 {st}
@@ -422,7 +424,11 @@ export default function Orders() {
                         {/* View Details */}
                         <td className="whitespace-nowrap px-5 py-4 text-right">
                           <button
-                            onClick={() => setSelectedOrder(order)}
+                            onClick={() =>
+                              navigate(`/manufacturer/orders/${order.orderId || order._id || order.id}`, {
+                                state: { order }
+                              })
+                            }
                             className="inline-flex items-center gap-1.5 rounded-xl border border-[#D9CBBF] bg-white px-3 py-1.5 text-xs font-bold text-[#4A1525] transition hover:border-[#4A1525] hover:bg-[#FAF6F0]"
                           >
                             <Eye size={13} />

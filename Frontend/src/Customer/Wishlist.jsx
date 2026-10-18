@@ -1,197 +1,200 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import CustomerSidebar from "./Sidebar";
-import WishlistCard from "./components/WishlistCard";
-import OrderModal from "./components/OrderModal";
-import { Heart, Sparkles, ShoppingBag, ArrowRight, CheckCircle2 } from "lucide-react";
+import { Heart, Sparkles, ShoppingBag, ArrowRight, CheckCircle2, Trash2, X, Eye, Tag } from "lucide-react";
 
 export default function Wishlist() {
   const navigate = useNavigate();
-  const [products, setProducts] = useState([]);
-  const [favorites, setFavorites] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem("vastra_customer_favorites") || "[]");
-    } catch {
-      return [];
-    }
-  });
+  const [wishlistItems, setWishlistItems] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const [selectedProduct, setSelectedProduct] = useState(null);
-  const [orderSuccess, setOrderSuccess] = useState(false);
-
-  const defaultCatalog = [
-    {
-      id: "1",
-      code: "KW-SILK-001",
-      name: "Kanchipuram Pure Silk Saree",
-      category: "Silk",
-      fabric: "Pure Mulberry Silk",
-      weave: "Hand Woven Korvai",
-      price: 8500,
-      image: "/images/kanchi.png",
-      artisan: "Kathar Weaves",
-      tag: "GI Tag Certified"
-    },
-    {
-      id: "2",
-      code: "KW-COT-002",
-      name: "Traditional Handloom Cotton Saree",
-      category: "Cotton",
-      fabric: "Combed Organic Cotton",
-      weave: "Heritage Handloom",
-      price: 4200,
-      image: "/images/cotton.png",
-      artisan: "Kathar Weaves",
-      tag: "India Handloom Brand"
-    },
-    {
-      id: "3",
-      code: "KW-SILK-003",
-      name: "Royal Bridal Zari Silk Saree",
-      category: "Silk",
-      fabric: "Silk & Half-Fine Zari",
-      weave: "Jacquard Hand Woven",
-      price: 11500,
-      image: "/images/zari.png",
-      artisan: "Kathar Weaves",
-      tag: "Silk Mark Certified"
-    },
-    {
-      id: "4",
-      code: "KW-COT-004",
-      name: "Organic Eco-Dyed Handloom Saree",
-      category: "Cotton",
-      fabric: "Natural Dyed Cotton",
-      weave: "Traditional Pit Loom",
-      price: 3800,
-      image: "/images/handloom.png",
-      artisan: "Aura Handlooms",
-      tag: "100% Eco Friendly"
-    }
-  ];
+  const userEmail = localStorage.getItem("userEmail") || "";
+  const customerId = localStorage.getItem("customerId") || localStorage.getItem("userId") || userEmail;
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/manufacturer/products")
-      .then((res) => res.json())
-      .then((json) => {
-        if (json.status === "success" && Array.isArray(json.data) && json.data.length > 0) {
-          setProducts(json.data);
-        } else {
-          setProducts(defaultCatalog);
-        }
-      })
-      .catch(() => setProducts(defaultCatalog));
-  }, []);
+    fetchWishlistAndDetails();
+  }, [userEmail, customerId]);
 
-  const handleRemoveFavorite = (prodId) => {
-    const stringId = String(prodId);
-    const updated = favorites.filter((id) => id !== stringId);
-    setFavorites(updated);
-    localStorage.setItem("vastra_customer_favorites", JSON.stringify(updated));
+  const fetchWishlistAndDetails = async () => {
+    setLoading(true);
+    try {
+      const activeId = customerId || userEmail;
+      if (!activeId) {
+        setWishlistItems([]);
+        return;
+      }
+      const res = await fetch(
+        `http://localhost:5000/api/customer/wishlist?customerId=${encodeURIComponent(activeId)}&customerEmail=${encodeURIComponent(userEmail)}`
+      );
+      const json = await res.json();
+      if (json.status === "success" && Array.isArray(json.data)) {
+        // Enrich items by fetching live product details by ID where available
+        const enrichedItems = await Promise.all(
+          json.data.map(async (item) => {
+            const pId = item.productId || item.code || item._id;
+            try {
+              const prodRes = await fetch(`http://localhost:5000/api/customer/products/${pId}`);
+              const prodJson = await prodRes.json();
+              if (prodJson.status === "success" && prodJson.data) {
+                return { ...item, ...prodJson.data, productId: pId, _id: item._id };
+              }
+            } catch {}
+            return item;
+          })
+        );
+
+        setWishlistItems(enrichedItems);
+        const ids = enrichedItems.map((item) => String(item.productId || item.code || item._id));
+        localStorage.setItem("vastra_customer_favorites", JSON.stringify(ids));
+      } else {
+        setWishlistItems([]);
+      }
+    } catch (err) {
+      console.warn("Wishlist fetch error:", err);
+      setWishlistItems([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const favoriteProducts = products.filter((p) =>
-    favorites.includes(String(p.id || p._id || p.code))
-  );
+  const handleRemoveWishlist = async (prodId) => {
+    try {
+      const activeId = customerId || userEmail;
+      await fetch(
+        `http://localhost:5000/api/customer/wishlist/${encodeURIComponent(prodId)}?customerId=${encodeURIComponent(activeId)}&customerEmail=${encodeURIComponent(userEmail)}`,
+        { method: "DELETE" }
+      );
+      const updated = wishlistItems.filter(
+        (item) =>
+          String(item.productId) !== String(prodId) &&
+          String(item.code) !== String(prodId) &&
+          String(item._id) !== String(prodId)
+      );
+      setWishlistItems(updated);
+      const ids = updated.map((item) => String(item.productId || item.code || item._id));
+      localStorage.setItem("vastra_customer_favorites", JSON.stringify(ids));
+    } catch (err) {
+      console.warn("Remove wishlist error:", err);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#F8F5EF] text-[#292421]">
       <CustomerSidebar />
 
-      <main className="manufacturer-main min-h-screen px-4 py-6 sm:px-8 sm:py-8 lg:px-10 lg:py-8">
-        {/* Header */}
+      <main className="customer-main min-h-screen p-6 sm:p-8 lg:p-10">
         <div>
           <div className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-[#A44747] ring-4 ring-[#A44747]/20" />
+            <span className="h-2 w-2 rounded-full bg-[#D09229] ring-4 ring-[#D09229]/20" />
             <p className="text-[11px] font-bold uppercase tracking-[2px] text-[#9B8068]">
-              Customer Portal
+              Saved Sarees & Patron Wishlist Collection
             </p>
           </div>
           <h1 className="mt-1 font-serif text-3xl font-bold tracking-tight text-[#4A1525] sm:text-4xl">
-            Liked Handloom Weaves
+            My Liked Products ({wishlistItems.length})
           </h1>
           <p className="mt-1 text-xs text-[#7A6D61] sm:text-sm">
-            Your saved authentic silks, organic cottons, and artisan heritage pieces.
+            Handcrafted sarees saved in your personal Wishlist collection, fetched by ID directly from master weaver looms.
           </p>
         </div>
 
-        {/* Success Alert */}
-        {orderSuccess && (
-          <div className="mt-6 flex items-center justify-between rounded-2xl border border-emerald-300 bg-emerald-50 p-4 text-emerald-800 shadow-sm animate-fadeIn">
-            <div className="flex items-center gap-3">
-              <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0" />
-              <div>
-                <p className="text-xs font-bold">Order Placed Successfully!</p>
-                <p className="text-[11px] text-emerald-700">
-                  The artisan workshop has received your request and will initiate loom setup.
-                </p>
-              </div>
-            </div>
-            <Link to="/customer/orders" className="text-xs font-bold text-emerald-800 underline">
-              Track Order
-            </Link>
+        {loading ? (
+          <div className="mt-16 text-center">
+            <p className="font-serif text-base font-bold text-[#4A1525]">Loading Liked Products Collection...</p>
           </div>
-        )}
-
-        {/* Wishlist Content */}
-        {favoriteProducts.length > 0 ? (
-          <div className="mt-8">
-            <div className="mb-4 flex items-center justify-between">
-              <p className="text-xs font-semibold text-[#7A6D61]">
-                <strong>{favoriteProducts.length}</strong> saved {favoriteProducts.length === 1 ? "weave" : "weaves"}
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {favoriteProducts.map((product) => {
-                const pId = product.id || product._id || product.code;
-                return (
-                  <WishlistCard
-                    key={pId}
-                    product={product}
-                    onRemove={handleRemoveFavorite}
-                    onOrder={(p) => setSelectedProduct(p)}
-                  />
-                );
-              })}
-            </div>
-          </div>
-        ) : (
-          /* Empty State */
-          <div className="mt-12 flex flex-col items-center justify-center rounded-3xl border border-[#E5DCD0] bg-white p-12 text-center shadow-xs">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#FAF0E1] text-[#A44747]">
-              <Heart className="h-8 w-8" />
-            </div>
-            <h3 className="mt-4 font-serif text-2xl font-bold text-[#4A1525]">
-              No Liked Weaves Yet
-            </h3>
-            <p className="mt-2 max-w-md text-xs leading-relaxed text-[#7A6D61]">
-              Explore our curated handloom catalog of GI-tagged Kanchipuram silks, organic cottons, and master artisan creations. Tap the heart icon on any saree to save it here!
+        ) : wishlistItems.length === 0 ? (
+          <div className="mt-12 rounded-3xl border border-dashed border-[#D8CCBD] bg-white/70 p-12 text-center">
+            <Heart className="mx-auto h-12 w-12 text-[#D09229]" />
+            <h2 className="mt-3 font-serif text-xl font-bold text-[#4A1525]">Your Wishlist Collection is Empty</h2>
+            <p className="mt-1 text-xs text-[#7A6D61]">
+              Explore authentic handloom sarees and tap the heart icon on any piece to store it in your Wishlist collection.
             </p>
             <button
               type="button"
               onClick={() => navigate("/customer")}
-              className="mt-6 flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#4A1525] to-[#7A263B] px-6 py-3 text-xs font-bold text-white shadow-md hover:opacity-95 transition cursor-pointer"
+              className="mt-6 inline-flex items-center gap-2 rounded-xl bg-[#4A1525] px-6 py-2.5 text-xs font-bold text-white hover:bg-[#6A1F35]"
             >
-              <Sparkles className="h-4 w-4 text-[#FCDA8B]" />
-              <span>Explore Handloom Catalog</span>
+              <span>Explore Saree Collection</span>
+              <ArrowRight size={14} />
             </button>
           </div>
-        )}
+        ) : (
+          <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {wishlistItems.map((p) => {
+              const pId = p.productId || p.code || p._id || p.id;
+              const priceNum = typeof p.price === "number" ? p.price : Number(p.price) || 0;
+              const formattedPrice = `₹${priceNum.toLocaleString("en-IN")}`;
 
-        {/* Order Modal */}
-        {selectedProduct && (
-          <OrderModal
-            product={selectedProduct}
-            onClose={() => setSelectedProduct(null)}
-            onSuccess={() => {
-              setOrderSuccess(true);
-              setTimeout(() => setOrderSuccess(false), 5000);
-            }}
-          />
+              return (
+                <div key={p._id || pId} className="rounded-2xl border border-[#E5DCD0] bg-white p-4 shadow-xs flex flex-col justify-between hover:shadow-md transition">
+                  <div>
+                    <div className="relative h-56 w-full overflow-hidden rounded-xl bg-[#FAF8F4]">
+                      <img src={p.image || "/images/kanchi.png"} alt={p.name} className="h-full w-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveWishlist(pId)}
+                        className="absolute right-2.5 top-2.5 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-red-700 shadow-xs hover:bg-white transition cursor-pointer"
+                        title="Remove from Wishlist collection"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                      <span className="absolute bottom-2.5 left-2.5 rounded-full bg-[#4A1525]/90 px-2.5 py-0.5 text-[9px] font-bold text-[#FCDA8B]">
+                        {p.tag || "Silk Mark Certified"}
+                      </span>
+                    </div>
+
+                    <div className="mt-3 flex items-center justify-between">
+                      <span className="inline-block text-[10px] font-bold uppercase tracking-wider text-[#A16B16]">
+                        {p.category || "Silk"} • {p.weave || "Hand Woven"}
+                      </span>
+                      <span className="rounded-md bg-[#FAF8F4] border border-[#EFE7DC] px-1.5 py-0.5 font-mono text-[10px] font-semibold text-[#8A7A6D]">
+                        ID: #{p.code || String(pId).slice(-6)}
+                      </span>
+                    </div>
+
+                    <h3 className="font-serif text-base font-bold text-[#4A1525] truncate mt-1">{p.name}</h3>
+                    {p.artisanName && (
+                      <p className="text-[11px] text-[#7A6D61] mt-0.5">Weaver: <strong>{p.artisanName}</strong></p>
+                    )}
+                    <p className="text-sm font-bold text-[#4A1525] mt-1.5">{formattedPrice}</p>
+                  </div>
+
+                  <div className="mt-4 grid grid-cols-2 gap-2 border-t border-[#F0E8DF] pt-3">
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/customer/products/${pId}`)}
+                      className="rounded-xl border border-[#E0D3C1] py-2 text-xs font-bold text-[#4A1525] hover:bg-[#FAF3E8] transition text-center"
+                    >
+                      Details
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        navigate("/customer/payment", {
+                          state: {
+                            isCustomBooking: false,
+                            orderData: {
+                              product: p.name,
+                              price: priceNum,
+                              amount: formattedPrice,
+                              manufacturer: p.artisan || p.manufacturerId || "Kathar Weaves",
+                              artisanName: p.artisanName || "Master Weaver",
+                              image: p.image || "/images/kanchi.png"
+                            }
+                          }
+                        })
+                      }
+                      className="rounded-xl bg-[#4A1525] py-2 text-xs font-bold text-white hover:bg-[#6A1F35] transition text-center"
+                    >
+                      Order
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         )}
       </main>
     </div>
   );
 }
-

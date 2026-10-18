@@ -7,27 +7,57 @@ import {
   Award,
   User,
   Heart,
+  Palette,
   LogOut,
-  ChevronLeft
+  ChevronLeft,
+  QrCode
 } from "lucide-react";
+import QRScannerModal from "../components/QRScannerModal";
 
 export default function CustomerSidebar() {
-  const [collapsed, setCollapsed] = useState(false);
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => {
+    const saved = localStorage.getItem("customerSidebarCollapsed");
+    return saved ? JSON.parse(saved) : false;
+  });
   const navigate = useNavigate();
 
-  const [favCount, setFavCount] = useState(() => {
-    try {
-      const items = JSON.parse(localStorage.getItem("vastra_customer_favorites") || "[]");
-      return items.length;
-    } catch {
-      return 0;
+  React.useEffect(() => {
+    localStorage.setItem(
+      "customerSidebarCollapsed",
+      JSON.stringify(collapsed)
+    );
+    document.body.classList.toggle(
+      "customer-sidebar-collapsed",
+      collapsed
+    );
+
+    return () => {
+      document.body.classList.remove("customer-sidebar-collapsed");
+    };
+  }, [collapsed]);
+
+  const userEmail = localStorage.getItem("userEmail") || "";
+  const [favCount, setFavCount] = useState(0);
+
+  React.useEffect(() => {
+    if (userEmail) {
+      fetch(`http://localhost:5000/api/customer/wishlist?customerEmail=${encodeURIComponent(userEmail)}`)
+        .then((r) => r.json())
+        .then((j) => {
+          if (j.status === "success" && Array.isArray(j.data)) {
+            setFavCount(j.data.length);
+          }
+        })
+        .catch(() => {});
     }
-  });
+  }, [userEmail]);
 
   const menuItems = [
     { name: "Explore Handlooms", path: "/customer", icon: ShoppingBag },
     { name: "Liked Products", path: "/customer/wishlist", icon: Heart, badge: favCount > 0 ? favCount : null },
     { name: "My Orders & Tracking", path: "/customer/orders", icon: Clock },
+    { name: "Custom Saree Designs", path: "/customer/design", icon: Palette },
     { name: "Custom Loom Booking", path: "/customer/booking", icon: Sparkles },
     { name: "Master Weavers", path: "/customer/manufacturers", icon: Award },
     { name: "My Profile", path: "/customer/profile", icon: User },
@@ -37,6 +67,7 @@ export default function CustomerSidebar() {
     localStorage.removeItem("userEmail");
     localStorage.removeItem("userRole");
     localStorage.removeItem("userName");
+    localStorage.removeItem("userAvatar");
     navigate("/");
   };
 
@@ -108,6 +139,26 @@ export default function CustomerSidebar() {
               </NavLink>
             );
           })}
+
+          {/* Quick Action: Scan Saree QR Code */}
+          <button
+            type="button"
+            onClick={() => setIsScannerOpen(true)}
+            className={`group relative flex h-[48px] items-center rounded-[10px] bg-[#FAF0E1] text-[#4A1525] border border-[#E8DEC8] transition-all duration-200 hover:bg-[#F5E5D0] cursor-pointer mt-2 ${
+              collapsed ? "justify-center px-0" : "gap-[14px] px-[14px]"
+            }`}
+            title="Scan Saree QR Authenticity Tag"
+          >
+            <QrCode className="h-5 w-5 shrink-0 text-[#A16B16]" />
+            {!collapsed && (
+              <span className="text-[13px] font-bold flex-1 text-left">Scan Saree QR</span>
+            )}
+            {!collapsed && (
+              <span className="rounded-md bg-[#4A1525] px-1.5 py-0.5 text-[9px] font-bold text-[#FCDA8B]">
+                Camera
+              </span>
+            )}
+          </button>
         </div>
       </nav>
 
@@ -116,7 +167,7 @@ export default function CustomerSidebar() {
         <button
           type="button"
           onClick={() => setCollapsed(!collapsed)}
-          className={`mb-[8px] flex h-[44px] w-full items-center rounded-[10px] text-[#746b62] transition-all hover:bg-[#f5eee5] hover:text-[#4A1525] ${
+          className={`mb-[8px] flex h-[44px] w-full items-center rounded-[10px] text-[#746b62] transition-all hover:bg-[#f5eee5] hover:text-[#4A1525] cursor-pointer ${
             collapsed ? "justify-center" : "gap-[14px] px-[14px]"
           }`}
         >
@@ -131,7 +182,7 @@ export default function CustomerSidebar() {
         <button
           type="button"
           onClick={handleLogout}
-          className={`flex h-[44px] w-full items-center rounded-[10px] text-[#8a3f3f] transition-all hover:bg-[#f9eeee] hover:text-[#a52f2f] ${
+          className={`flex h-[44px] w-full items-center rounded-[10px] text-[#8a3f3f] transition-all hover:bg-[#f9eeee] hover:text-[#a52f2f] cursor-pointer ${
             collapsed ? "justify-center" : "gap-[14px] px-[14px]"
           }`}
         >
@@ -139,6 +190,12 @@ export default function CustomerSidebar() {
           {!collapsed && <span className="text-[14px] font-medium">Logout</span>}
         </button>
       </div>
+
+      {/* Live QR Scanner Modal */}
+      <QRScannerModal
+        isOpen={isScannerOpen}
+        onClose={() => setIsScannerOpen(false)}
+      />
     </aside>
   );
 }

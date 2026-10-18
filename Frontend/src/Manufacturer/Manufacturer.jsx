@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import RAG from "./RAG";
 import {
@@ -14,74 +14,115 @@ import {
   Calendar,
   User,
   Loader2,
-  ArrowUpRight
+  ArrowUpRight,
+  Building2,
+  Copy,
+  Check,
+  RefreshCw,
+  Sparkles,
+  Layers,
+  Scissors
 } from "lucide-react";
 
 const Manufacturer = () => {
   const navigate = useNavigate();
+  const { id: routeId } = useParams();
+  const [searchParams] = useSearchParams();
+
+  const queryId = searchParams.get("id") || searchParams.get("manufacturerId");
+
+  // Determine active identifier (route :id -> query ?id -> localStorage -> default)
+  const userEmail = useMemo(() => {
+    return (
+      routeId ||
+      queryId ||
+      localStorage.getItem("manufacturerId") ||
+      localStorage.getItem("userId") ||
+      localStorage.getItem("id") ||
+      localStorage.getItem("userEmail") ||
+      "rithikeswaran.it23@bitsathy.ac.in"
+    );
+  }, [routeId, queryId]);
+
   const [orders, setOrders] = useState([]);
   const [products, setProducts] = useState([]);
   const [profile, setProfile] = useState(null);
+  const [statsData, setStatsData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const userEmail =
-    localStorage.getItem("userEmail") ||
-    "rithikeswaran.it23@bitsathy.ac.in";
+  // Fetch live collections directly matching Revenue.jsx and /stats
+  const fetchData = async () => {
+    try {
+      setLoading(true);
 
-  // Fetch live collections directly as like Revenue.jsx
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
+      const targetId = encodeURIComponent(userEmail.trim());
 
-        const [ordersRes, productsRes, profileRes] = await Promise.all([
-          fetch(
-            `http://localhost:5000/api/manufacturer/orders?manufacturerId=${encodeURIComponent(
-              userEmail
-            )}`
-          ),
-          fetch(
-            `http://localhost:5000/api/manufacturer/products?manufacturerId=${encodeURIComponent(
-              userEmail
-            )}`
-          ),
-          fetch(
-            `http://localhost:5000/api/manufacturer/profile?email=${encodeURIComponent(
-              userEmail
-            )}`
-          )
-        ]);
+      const [ordersRes, productsRes, profileRes, statsRes] = await Promise.all([
+        fetch(
+          `http://localhost:5000/api/manufacturer/orders?manufacturerId=${targetId}`
+        ),
+        fetch(
+          `http://localhost:5000/api/manufacturer/products?manufacturerId=${targetId}`
+        ),
+        fetch(
+          `http://localhost:5000/api/manufacturer/profile?email=${targetId}`
+        ),
+        fetch(
+          `http://localhost:5000/api/manufacturer/stats?manufacturerId=${targetId}`
+        )
+      ]);
 
-        const [ordersData, productsData, profileData] = await Promise.all([
-          ordersRes.json(),
-          productsRes.json(),
-          profileRes.json()
-        ]);
+      const [ordersData, productsData, profileData, statsJson] = await Promise.all([
+        ordersRes.json(),
+        productsRes.json(),
+        profileRes.json(),
+        statsRes.json()
+      ]);
 
-        if (ordersData.status === "success" && Array.isArray(ordersData.data)) {
-          setOrders(ordersData.data);
-        } else {
-          setOrders([]);
-        }
-
-        if (productsData.status === "success" && Array.isArray(productsData.data)) {
-          setProducts(productsData.data);
-        } else {
-          setProducts([]);
-        }
-
-        if (profileData.status === "success" && profileData.data) {
-          setProfile(profileData.data);
-        }
-      } catch (error) {
-        console.error("Dashboard data fetch error:", error);
-      } finally {
-        setLoading(false);
+      if (ordersData.status === "success" && Array.isArray(ordersData.data)) {
+        setOrders(ordersData.data);
+      } else {
+        setOrders([]);
       }
-    };
 
+      if (productsData.status === "success" && Array.isArray(productsData.data)) {
+        setProducts(productsData.data);
+      } else {
+        setProducts([]);
+      }
+
+      if (profileData.status === "success" && profileData.data) {
+        setProfile(profileData.data);
+      }
+
+      if (statsJson.status === "success" && statsJson.data) {
+        setStatsData(statsJson.data);
+      }
+    } catch (error) {
+      console.error("Dashboard data fetch error:", error);
+    } finally {
+      setLoading(false);
+      setIsRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
     fetchData();
   }, [userEmail]);
+
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    fetchData();
+  };
+
+  const handleCopyId = () => {
+    const idToCopy = profile?._id || profile?.id || userEmail;
+    navigator.clipboard.writeText(String(idToCopy));
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   // Amount parsing helper matching Revenue.jsx
   const getAmount = (amount) => {
@@ -103,7 +144,7 @@ const Manufacturer = () => {
     const parsed = new Date(date);
     if (!isNaN(parsed.getTime())) return parsed;
 
-    const parts = String(date).split(" ");
+    const parts = String(date).trim().split(" ");
     if (parts.length === 3) {
       const months = {
         Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5,
@@ -125,13 +166,10 @@ const Manufacturer = () => {
   // Total Orders
   const totalOrders = orders.length;
 
-  // Pending & In Production Orders
+  // Active Pending Orders (Needs fulfillment or in production)
   const pendingOrders = useMemo(() => {
     return orders.filter(
-      (o) =>
-        o.status === "Pending" ||
-        o.status === "In Production" ||
-        o.status === "Quality Check"
+      (o) => o.status !== "Completed" && o.status !== "Delivered"
     ).length;
   }, [orders]);
 
@@ -142,12 +180,22 @@ const Manufacturer = () => {
     ).length;
   }, [orders]);
 
-  // Total Revenue from Paid or Completed Orders
+  // Total Revenue from Paid or Advance Paid Orders
   const totalRevenue = useMemo(() => {
-    return orders
-      .filter((o) => o.payment === "Paid" || o.status === "Completed")
+    const sum = orders
+      .filter(
+        (o) =>
+          o.payment === "Paid" ||
+          o.payment === "Advance Paid" ||
+          o.paymentStatus === "Paid" ||
+          o.paymentStatus === "Advance Paid" ||
+          o.status === "Completed" ||
+          o.status === "Delivered"
+      )
       .reduce((total, order) => total + getAmount(order.amount), 0);
-  }, [orders]);
+
+    return sum > 0 ? sum : statsData?.rawRevenue || 0;
+  }, [orders, statsData]);
 
   // Formatted Revenue
   const formattedRevenue = useMemo(() => {
@@ -157,65 +205,143 @@ const Manufacturer = () => {
     return `₹${totalRevenue.toLocaleString("en-IN")}`;
   }, [totalRevenue]);
 
-  // Monthly Revenue Chart Data
+  // Monthly Revenue Chart Data (All 12 Months)
   const monthlyRevenue = useMemo(() => {
-    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug"];
+    const months = [
+      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+    ];
     const map = {};
     months.forEach((m) => {
       map[m] = 0;
     });
 
-    orders
-      .filter((o) => o.payment === "Paid" || o.status === "Completed")
-      .forEach((order) => {
-        const date = parseDate(order.date);
-        if (date) {
-          const mNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-          const mStr = mNames[date.getMonth()];
+    orders.forEach((order) => {
+      const amt = getAmount(order.amount);
+      const isPaid =
+        order.payment === "Paid" ||
+        order.payment === "Advance Paid" ||
+        order.paymentStatus === "Paid" ||
+        order.paymentStatus === "Advance Paid" ||
+        order.status === "Completed" ||
+        order.status === "Delivered";
+
+      if (isPaid && amt > 0) {
+        const d = parseDate(order.date) || (order.createdAt ? new Date(order.createdAt) : null);
+        if (d && !isNaN(d.getTime())) {
+          const mNames = [
+            "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+          ];
+          const mStr = mNames[d.getMonth()];
           if (map[mStr] !== undefined) {
-            map[mStr] += getAmount(order.amount);
+            map[mStr] += amt;
           }
         }
-      });
+      }
+    });
 
     const maxRev = Math.max(...Object.values(map), 1);
 
     return months.map((month) => ({
       month,
       revenue: map[month],
-      value: map[month] > 0 ? Math.max(Math.round((map[month] / maxRev) * 100), 15) : 8
+      value: map[month] > 0 ? Math.max(Math.round((map[month] / maxRev) * 100), 22) : 6
     }));
   }, [orders]);
 
-  // Order Status Breakdown
+  // Order Status Breakdown with accurate classification
   const statusBreakdown = useMemo(() => {
-    const inProd = orders.filter((o) => o.status === "In Production").length;
-    const qc = orders.filter((o) => o.status === "Quality Check").length;
-    const pend = orders.filter((o) => o.status === "Pending").length;
-    const comp = orders.filter((o) => o.status === "Completed" || o.status === "Delivered").length;
+    const comp = orders.filter(
+      (o) => o.status === "Completed" || o.status === "Delivered"
+    ).length;
+
+    const inProd = orders.filter(
+      (o) =>
+        o.status === "In Production" ||
+        (o.status && o.status.toLowerCase().includes("production"))
+    ).length;
+
+    const qc = orders.filter(
+      (o) =>
+        o.status === "Quality Check" ||
+        (o.status && o.status.toLowerCase().includes("inspection"))
+    ).length;
+
+    const pend = orders.filter(
+      (o) =>
+        o.status === "Pending" ||
+        o.status === "Order Placed" ||
+        o.status === "Custom Request Confirmed" ||
+        (o.status &&
+          (o.status.toLowerCase().includes("placed") ||
+            o.status.toLowerCase().includes("confirm")))
+    ).length;
 
     const calcPct = (cnt) =>
       totalOrders > 0 ? `${Math.round((cnt / totalOrders) * 100)}%` : "0%";
 
     return [
-      { label: "Completed", count: comp, percentage: calcPct(comp), color: "bg-[#4A1525]" },
-      { label: "In Production", count: inProd, percentage: calcPct(inProd), color: "bg-[#D09229]" },
-      { label: "Quality Check", count: qc, percentage: calcPct(qc), color: "bg-[#8B6C98]" },
-      { label: "Pending", count: pend, percentage: calcPct(pend), color: "bg-[#DDD2C6]" }
+      {
+        label: "Completed",
+        count: comp,
+        percentage: calcPct(comp),
+        color: "bg-[#4A1525]",
+        hex: "#4A1525"
+      },
+      {
+        label: "In Production",
+        count: inProd,
+        percentage: calcPct(inProd),
+        color: "bg-[#D09229]",
+        hex: "#D09229"
+      },
+      {
+        label: "Quality Check",
+        count: qc,
+        percentage: calcPct(qc),
+        color: "bg-[#8B6C98]",
+        hex: "#8B6C98"
+      },
+      {
+        label: "Pending",
+        count: pend,
+        percentage: calcPct(pend),
+        color: "bg-[#DDD2C6]",
+        hex: "#DDD2C6"
+      }
     ];
   }, [orders, totalOrders]);
+
+  // Dynamically computed conic gradient for the donut chart
+  const donutGradient = useMemo(() => {
+    if (totalOrders === 0) {
+      return "conic-gradient(#FAF5EE 0deg 360deg)";
+    }
+    let currentDeg = 0;
+    const parts = statusBreakdown.map((row) => {
+      const sliceDeg = (row.count / totalOrders) * 360;
+      const start = currentDeg;
+      const end = currentDeg + sliceDeg;
+      currentDeg = end;
+      return `${row.hex} ${start}deg ${end}deg`;
+    });
+    return `conic-gradient(${parts.join(", ")})`;
+  }, [statusBreakdown, totalOrders]);
 
   // Recent 4 Orders
   const recentOrders = useMemo(() => {
     return orders.slice(0, 4);
   }, [orders]);
 
-  // Production Progress Items
+  // Production Progress Items from actual bookings
   const productionItems = useMemo(() => {
     const active = orders.filter(
       (o) =>
         o.status === "In Production" ||
         o.status === "Quality Check" ||
+        o.status === "Order Placed" ||
+        o.status === "Custom Request Confirmed" ||
         o.status === "Completed"
     );
 
@@ -227,15 +353,17 @@ const Manufacturer = () => {
     }
 
     return active.slice(0, 4).map((o) => {
-      let pct = "85%";
+      let pct = "60%";
       let isDone = false;
-      if (o.status === "Completed") {
+      if (o.status === "Completed" || o.status === "Delivered") {
         pct = "100%";
         isDone = true;
       } else if (o.status === "Quality Check") {
         pct = "75%";
       } else if (o.status === "In Production") {
         pct = "60%";
+      } else {
+        pct = "35%";
       }
       return {
         label: o.product || "Handloom Weave",
@@ -246,14 +374,8 @@ const Manufacturer = () => {
     });
   }, [orders]);
 
-  const businessName = profile?.businessName || "Kathar Weaves";
-  const initials =
-    businessName
-      .split(" ")
-      .map((w) => w[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2) || "KW";
+  const businessName = profile?.businessName || statsData?.businessName || "Kathar Weaves";
+  const displayId = profile?._id || profile?.id || userEmail;
 
   return (
     <div className="min-h-screen bg-[#F8F5EF] text-[#292421]">
@@ -261,27 +383,65 @@ const Manufacturer = () => {
 
       <main className="manufacturer-main min-h-screen px-4 py-6 sm:px-8 sm:py-8 lg:px-10 lg:py-8">
         {/* =================================================
-            HEADER
+            HEADER & ACTIVE IDENTIFIER
         ================================================= */}
         <header className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-[#D09229] ring-4 ring-[#D09229]/20" />
               <p className="text-[11px] font-bold uppercase tracking-[2px] text-[#9B8068]">
-                Manufacturer Dashboard
+                Enterprise Overview
               </p>
+
+              {/* Manufacturer ID Pill */}
+              <div className="inline-flex items-center gap-1.5 rounded-full border border-[#E5DCD0] bg-white px-3 py-1 shadow-xs">
+                <Building2 size={12} className="text-[#A16B16]" />
+                <span className="text-[11px] font-semibold text-[#7A6D61]">
+                  Weaver ID:
+                </span>
+                <span className="font-mono text-[11px] font-bold text-[#4A1525]">
+                  {String(displayId).slice(0, 10)}
+                  {String(displayId).length > 10 ? "..." : ""}
+                </span>
+                <button
+                  type="button"
+                  onClick={handleCopyId}
+                  title="Copy full Manufacturer ID"
+                  className="ml-1 text-[#9B8068] transition hover:text-[#4A1525]"
+                >
+                  {copied ? (
+                    <Check size={12} className="text-emerald-600" />
+                  ) : (
+                    <Copy size={12} />
+                  )}
+                </button>
+              </div>
             </div>
 
-            <h1 className="mt-1 font-serif text-3xl font-bold tracking-tight text-[#4A1525] sm:text-4xl">
+            <h1 className="mt-2 font-serif text-3xl font-bold tracking-tight text-[#4A1525] sm:text-4xl">
               {businessName}
             </h1>
 
             <p className="mt-1 text-xs text-[#7A6D61] sm:text-sm">
-              Live handloom metrics, orders, revenue, and production tracking directly from MongoDB.
+              Live handloom metrics, active looms, orders, and sales revenue overview directly from MongoDB.
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={handleRefresh}
+              disabled={isRefreshing || loading}
+              className="flex h-10 items-center gap-2 rounded-xl border border-[#D9CBBF] bg-white px-3.5 text-xs font-bold text-[#56493F] shadow-xs transition hover:border-[#4A1525] hover:text-[#4A1525] active:scale-95"
+              title="Refresh database records"
+            >
+              <RefreshCw
+                size={14}
+                className={isRefreshing ? "animate-spin text-[#4A1525]" : ""}
+              />
+              <span>Refresh</span>
+            </button>
+
             <button
               onClick={() => navigate("/manufacturer/products")}
               className="flex h-10 items-center gap-2 rounded-xl border border-[#D9CBBF] bg-white px-4 text-xs font-bold text-[#56493F] shadow-xs transition hover:border-[#4A1525] hover:text-[#4A1525] active:scale-95"
@@ -297,9 +457,10 @@ const Manufacturer = () => {
               <Plus className="h-4 w-4" />
               <span>Add Product</span>
             </button>
-
           </div>
         </header>
+
+        {/* HERO BANNER */}
         <section className="relative mt-6 overflow-hidden rounded-2xl bg-gradient-to-br from-[#411220] via-[#5F192E] to-[#7D293E] p-6 text-white shadow-[0_12px_36px_rgba(74,21,37,0.18)] sm:p-8">
           <div className="pointer-events-none absolute -right-16 -top-16 h-72 w-72 rounded-full border border-white/10" />
           <div className="pointer-events-none absolute bottom-0 right-1/4 h-48 w-48 rounded-full bg-[#D09229]/15 blur-2xl" />
@@ -307,33 +468,45 @@ const Manufacturer = () => {
           <div className="relative z-10 flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
             <div className="max-w-2xl">
               <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-[#FCDA8B] backdrop-blur-xs">
-                <span className="h-1.5 w-1.5 rounded-full bg-[#FCDA8B] animate-pulse" />
+                <Sparkles className="h-3 w-3 text-[#FCDA8B]" />
                 Authentic Handloom • Crafted With Tradition
               </div>
 
               <h2 className="mt-3 font-serif text-2xl font-bold tracking-tight text-white sm:text-3xl">
-                Grow your craft. Manage your handloom enterprise.
+                Handloom Production & Financial Overview
               </h2>
 
               <p className="mt-2 text-xs leading-relaxed text-white/80 sm:text-sm">
-                Real-time tracking of weaving production, live dispatch addresses, customer relationships, and revenue.
+                Real-time tracking of {profile?.loomsActive || 18} active handlooms, live customer bookings, weaver dispatches, and cumulative sales earnings.
               </p>
             </div>
 
-            <button
-              onClick={() => navigate("/manufacturer/orders")}
-              className="flex w-fit items-center gap-2 rounded-xl bg-[#D09229] px-5 py-3 text-xs font-bold text-[#3B1502] shadow-md transition hover:bg-[#E5A43A] active:scale-95"
-            >
-              <span>Manage Orders ({totalOrders})</span>
-              <ArrowRight className="h-4 w-4" />
-            </button>
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                onClick={() => navigate("/manufacturer/orders")}
+                className="flex w-fit items-center gap-2 rounded-xl bg-[#D09229] px-5 py-3 text-xs font-bold text-[#3B1502] shadow-md transition hover:bg-[#E5A43A] active:scale-95"
+              >
+                <span>Manage Orders ({totalOrders})</span>
+                <ArrowRight className="h-4 w-4" />
+              </button>
+
+              <button
+                onClick={() => navigate("/manufacturer/revenue")}
+                className="flex w-fit items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-xs font-bold text-white backdrop-blur-xs transition hover:bg-white/20 active:scale-95"
+              >
+                <IndianRupee className="h-4 w-4 text-[#FCDA8B]" />
+                <span>Revenue Page</span>
+              </button>
+            </div>
           </div>
         </section>
 
         {loading ? (
           <div className="mt-16 flex flex-col items-center justify-center gap-3">
             <Loader2 className="h-8 w-8 animate-spin text-[#4A1525]" />
-            <p className="text-xs text-[#8F8175]">Loading live dashboard data from MongoDB...</p>
+            <p className="text-xs text-[#8F8175]">
+              Loading live dashboard overview from MongoDB...
+            </p>
           </div>
         ) : (
           <>
@@ -368,7 +541,7 @@ const Manufacturer = () => {
                 title="Pending & In Production"
                 value={String(pendingOrders)}
                 trendText="Needs dispatch"
-                subtitle="active orders"
+                subtitle="active pipeline"
                 iconBg="bg-[#F8EEE4]"
                 iconColor="text-[#A96832]"
                 onClick={() => navigate("/manufacturer/orders")}
@@ -379,7 +552,7 @@ const Manufacturer = () => {
                 title="Total Revenue"
                 value={formattedRevenue}
                 trend="15%"
-                subtitle="gross earnings"
+                subtitle="gross realized earnings"
                 iconBg="bg-[#F0EADB]"
                 iconColor="text-[#806020]"
                 onClick={() => navigate("/manufacturer/revenue")}
@@ -402,16 +575,17 @@ const Manufacturer = () => {
                         Revenue Overview
                       </h3>
                       <p className="text-[11px] text-[#8F8175]">
-                        Live earnings distribution
+                        Live earnings distribution across all 12 months
                       </p>
                     </div>
                   </div>
 
                   <button
                     onClick={() => navigate("/manufacturer/revenue")}
-                    className="rounded-full bg-[#FAF5EE] px-3 py-1 text-[11px] font-bold text-[#705D4E] border border-[#EBE1D6] hover:bg-[#F0E8DF]"
+                    className="flex items-center gap-1.5 rounded-full bg-[#FAF5EE] px-3.5 py-1 text-[11px] font-bold text-[#705D4E] border border-[#EBE1D6] hover:bg-[#F0E8DF] transition"
                   >
-                    View Revenue Page
+                    <span>View Revenue Page</span>
+                    <ArrowUpRight size={12} />
                   </button>
                 </div>
 
@@ -432,31 +606,38 @@ const Manufacturer = () => {
                   </div>
 
                   {/* BAR CHART */}
-                  <div className="mt-6 flex h-48 items-end gap-3 border-b border-[#EFE6DB] pb-2 sm:gap-4">
-                    {monthlyRevenue.map((item, index, arr) => {
-                      const isLatest = index === arr.length - 1;
+                  <div className="mt-6 flex h-48 items-end gap-2 border-b border-[#EFE6DB] pb-2 sm:gap-3">
+                    {monthlyRevenue.map((item) => {
+                      const hasRevenue = item.revenue > 0;
                       return (
                         <div
                           key={item.month}
                           className="group relative flex h-full flex-1 flex-col justify-end items-center cursor-pointer"
                         >
-                          <div className="absolute -top-10 hidden rounded-lg bg-[#2E121B] px-2.5 py-1 text-[10px] font-bold text-[#F7D896] shadow-md group-hover:block pointer-events-none z-20">
+                          <div className="absolute -top-10 hidden rounded-lg bg-[#2E121B] px-2.5 py-1 text-[10px] font-bold text-[#F7D896] shadow-md group-hover:block pointer-events-none z-20 whitespace-nowrap">
                             ₹{(item.revenue || 0).toLocaleString("en-IN")}
                           </div>
 
                           <div className="relative flex h-full w-full items-end justify-center">
                             <div
-                              className={`w-full max-w-[36px] rounded-t-lg transition-all duration-300 group-hover:scale-y-[1.03] ${isLatest
+                              className={`w-full max-w-[32px] rounded-t-lg transition-all duration-300 group-hover:scale-y-[1.03] ${
+                                hasRevenue
                                   ? "bg-gradient-to-t from-[#4A1525] via-[#681E34] to-[#D09229] shadow-xs"
                                   : "bg-[#E6DBD1] group-hover:bg-[#D9CCC0]"
-                                }`}
+                              }`}
                               style={{
                                 height: `${Math.max(item.value, 8)}%`
                               }}
                             />
                           </div>
 
-                          <p className="mt-2 text-center text-[11px] font-semibold text-[#8F8175] group-hover:text-[#4A1525]">
+                          <p
+                            className={`mt-2 text-center text-[10px] font-semibold transition ${
+                              hasRevenue
+                                ? "text-[#4A1525] font-bold"
+                                : "text-[#8F8175]"
+                            } group-hover:text-[#4A1525]`}
+                          >
                             {item.month}
                           </p>
                         </div>
@@ -474,14 +655,17 @@ const Manufacturer = () => {
                       Order Status
                     </h3>
                     <p className="mt-0.5 text-[11px] text-[#8F8175]">
-                      Live stage breakdown
+                      Live stage breakdown from MongoDB bookings
                     </p>
                   </div>
 
                   <div className="pt-6">
                     <div className="flex flex-col items-center gap-6 sm:flex-row sm:justify-around">
-                      {/* DONUT TOTAL */}
-                      <div className="relative flex h-36 w-36 shrink-0 items-center justify-center rounded-full bg-[conic-gradient(#4A1525_0deg_120deg,#D09229_120deg_200deg,#8B6C98_200deg_260deg,#DDD2C6_260deg_360deg)] shadow-inner">
+                      {/* DYNAMIC CONIC DONUT */}
+                      <div
+                        className="relative flex h-36 w-36 shrink-0 items-center justify-center rounded-full shadow-inner transition-all duration-500"
+                        style={{ background: donutGradient }}
+                      >
                         <div className="flex h-24 w-24 flex-col items-center justify-center rounded-full bg-white shadow-sm">
                           <span className="font-serif text-3xl font-bold text-[#4A1525]">
                             {totalOrders}
@@ -500,12 +684,18 @@ const Manufacturer = () => {
                             className="flex items-center justify-between rounded-xl bg-[#FAF5EE] px-3 py-2 text-xs font-semibold"
                           >
                             <div className="flex items-center gap-2">
-                              <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${row.color}`} />
+                              <span
+                                className={`h-2.5 w-2.5 shrink-0 rounded-full ${row.color}`}
+                              />
                               <span className="text-[#4A1525]">{row.label}</span>
                             </div>
                             <div className="flex items-center gap-2">
-                              <span className="font-bold text-[#4A1525]">{row.count}</span>
-                              <span className="text-[10px] text-[#8F8175]">({row.percentage})</span>
+                              <span className="font-bold text-[#4A1525]">
+                                {row.count}
+                              </span>
+                              <span className="text-[10px] text-[#8F8175]">
+                                ({row.percentage})
+                              </span>
                             </div>
                           </div>
                         ))}
@@ -567,7 +757,8 @@ const Manufacturer = () => {
                               {order.product}
                             </p>
                             <p className="mt-0.5 truncate text-[10px] text-[#8F8175]">
-                              #{order.orderId || order.id} • {order.customer} {order.date ? `• ${order.date}` : ""}
+                              #{order.orderId || order.id} • {order.customer}{" "}
+                              {order.date ? `• ${order.date}` : ""}
                             </p>
                           </div>
                         </div>
@@ -577,8 +768,10 @@ const Manufacturer = () => {
                             {order.amount}
                           </p>
                           <span
-                            className={`mt-1 inline-block rounded-full border px-2 py-0.5 text-[9px] font-bold ${order.statusClass || "bg-[#FFF4DF] text-[#A16B16] border-[#F5DEC0]"
-                              }`}
+                            className={`mt-1 inline-block rounded-full border px-2 py-0.5 text-[9px] font-bold ${
+                              order.statusClass ||
+                              "bg-[#FFF4DF] text-[#A16B16] border-[#F5DEC0]"
+                            }`}
                           >
                             {order.status}
                           </span>
@@ -586,7 +779,9 @@ const Manufacturer = () => {
                       </div>
                     ))
                   ) : (
-                    <p className="py-6 text-center text-xs text-[#8F8175]">No recent orders found.</p>
+                    <p className="py-6 text-center text-xs text-[#8F8175]">
+                      No recent orders found.
+                    </p>
                   )}
                 </div>
               </div>
@@ -606,8 +801,12 @@ const Manufacturer = () => {
                   {productionItems.map((item) => (
                     <div key={item.label}>
                       <div className="flex items-center justify-between text-xs font-semibold">
-                        <span className="text-[#292421] line-clamp-1">{item.label}</span>
-                        <span className="text-[#4A1525] font-bold">{item.value}</span>
+                        <span className="text-[#292421] line-clamp-1">
+                          {item.label}
+                        </span>
+                        <span className="text-[#4A1525] font-bold">
+                          {item.value}
+                        </span>
                       </div>
                       <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-[#FAF0E1]">
                         <div
@@ -641,20 +840,20 @@ const Manufacturer = () => {
           />
           <QuickAction
             icon={<Box className="h-4 w-4" />}
-            title="Inventory"
+            title="Catalog"
             subtitle="Stock control"
             onClick={() => navigate("/manufacturer/products")}
           />
           <QuickAction
-            icon={<CheckCircle2 className="h-4 w-4" />}
-            title="Profile"
-            subtitle="Weaver details"
-            onClick={() => navigate("/manufacturer/profile")}
+            icon={<IndianRupee className="h-4 w-4" />}
+            title="Revenue"
+            subtitle="Financial analysis"
+            onClick={() => navigate("/manufacturer/revenue")}
           />
         </section>
 
         {/* =================================================
-            VERIFIED MANUFACTURER
+            VERIFIED MANUFACTURER FOOTER
         ================================================= */}
         <div className="mt-6 flex flex-col gap-3 rounded-2xl border border-[#E5DCD0] bg-gradient-to-r from-[#FAF6EE] to-[#F5ECE0] p-4 sm:flex-row sm:items-center sm:justify-between shadow-2xs">
           <div className="flex items-center gap-3">
@@ -667,7 +866,7 @@ const Manufacturer = () => {
                 Verified Handloom Producer
               </p>
               <p className="mt-0.5 text-[11px] text-[#7C6E61]">
-                {businessName} • Active Looms: {profile?.loomsActive || 18} • Authentic handloom business
+                {businessName} • Active Looms: {profile?.loomsActive || 18} • Master Artisans: {profile?.artisanCount || 32} • Silk Mark Certified
               </p>
             </div>
           </div>

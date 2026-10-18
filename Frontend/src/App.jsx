@@ -16,17 +16,20 @@ import ProductDetails from "./Customer/ProductDetails";
 import Wishlist from "./Customer/Wishlist";
 import ArtisanDetails from "./Customer/ArtisanDetails";
 import Payment from "./Customer/Payment";
+import CustomerProfile from "./Customer/Profile";
+import CustomerDesign from "./Customer/Design";
+import CustomerCreateDesign from "./Customer/CreateDesign";
+import PublicProductView from "./Customer/PublicProductView";
 
 // Manufacturer Views
 import Manufacturer from "./Manufacturer/Manufacturer";
 import Products from "./Manufacturer/Products";
 import Orders from "./Manufacturer/Orders";
+import OrderDetails from "./Manufacturer/OrderDetails";
 import Profile from "./Manufacturer/Profile";
 import Gallery from "./Manufacturer/Gallery";
 import Customers from "./Manufacturer/Customers";
 import Revenue from "./Manufacturer/Revenue";
-import Design from "./Manufacturer/Design";
-import CreateDesign from "./Manufacturer/CreateDesign";
 
 function App() {
   const userRole = localStorage.getItem("userRole");
@@ -39,6 +42,11 @@ function App() {
         element={userRole ? <Navigate to={`/${userRole}`} replace /> : <Login />}
       />
 
+      {/* Public Mobile Authenticity & QR Scanning Routes (No Login Required) */}
+      <Route path="/product/:id" element={<PublicProductView />} />
+      <Route path="/verify/:id" element={<PublicProductView />} />
+      <Route path="/verify-product/:id" element={<PublicProductView />} />
+
       {/* Manufacturer Portal Routes */}
       <Route
         path="/manufacturer"
@@ -49,7 +57,23 @@ function App() {
         }
       />
       <Route
+        path="/manufacturer/:id"
+        element={
+          <ProtectedRoute allowedRole="manufacturer">
+            <Manufacturer />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/manufacturer/dashboard"
+        element={
+          <ProtectedRoute allowedRole="manufacturer">
+            <Manufacturer />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/manufacturer/dashboard/:id"
         element={
           <ProtectedRoute allowedRole="manufacturer">
             <Manufacturer />
@@ -73,6 +97,14 @@ function App() {
         }
       />
       <Route
+        path="/manufacturer/orders/:id"
+        element={
+          <ProtectedRoute allowedRole="manufacturer">
+            <OrderDetails />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/manufacturer/gallery"
         element={
           <ProtectedRoute allowedRole="manufacturer">
@@ -81,23 +113,15 @@ function App() {
         }
       />
       <Route
-        path="/manufacturer/design"
-        element={
-          <ProtectedRoute allowedRole="manufacturer">
-            <Design />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/manufacturer/create-design"
-        element={
-          <ProtectedRoute allowedRole="manufacturer">
-            <CreateDesign />
-          </ProtectedRoute>
-        }
-      />
-      <Route
         path="/manufacturer/revenue"
+        element={
+          <ProtectedRoute allowedRole="manufacturer">
+            <Revenue />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/manufacturer/revenue/:id"
         element={
           <ProtectedRoute allowedRole="manufacturer">
             <Revenue />
@@ -171,6 +195,22 @@ function App() {
         }
       />
       <Route
+        path="/customer/design"
+        element={
+          <ProtectedRoute allowedRole="customer">
+            <CustomerDesign />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/customer/create-design"
+        element={
+          <ProtectedRoute allowedRole="customer">
+            <CustomerCreateDesign />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/customer/booking"
         element={
           <ProtectedRoute allowedRole="customer">
@@ -183,6 +223,22 @@ function App() {
         element={
           <ProtectedRoute allowedRole="customer">
             <CustomerManufacturers />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/customer/manufacturers/:id"
+        element={
+          <ProtectedRoute allowedRole="customer">
+            <ArtisanDetails />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/customer/profile"
+        element={
+          <ProtectedRoute allowedRole="customer">
+            <CustomerProfile />
           </ProtectedRoute>
         }
       />

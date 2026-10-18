@@ -25,19 +25,27 @@ export default function Login() {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    const userRole = getUserRole(email.trim().toLowerCase());
+    const userEmail = email.trim().toLowerCase();
+    const userRole = getUserRole(userEmail);
 
     if (!userRole) {
       alert("This email is not registered in Vastra.");
       return;
     }
 
-    localStorage.setItem("userEmail", email.trim().toLowerCase());
+    const defaultName = userEmail
+      .split("@")[0]
+      .replace(/[._-]/g, " ")
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+
+    localStorage.setItem("userEmail", userEmail);
     localStorage.setItem("userRole", userRole);
+    if (!localStorage.getItem("userName")) {
+      localStorage.setItem("userName", defaultName);
+    }
 
     console.log("Login submitted:", {
-      email,
-      password,
+      email: userEmail,
       role: userRole,
     });
 
@@ -56,9 +64,12 @@ export default function Login() {
       const decoded = jwtDecode(credentialResponse.credential);
 
       const googleEmail = decoded?.email?.trim().toLowerCase();
+      const googleName = decoded?.name?.trim() || "";
+      const googleAvatar = decoded?.picture?.trim() || "";
 
       console.log("Google Login Success:", decoded);
       console.log("Google Email:", googleEmail);
+      console.log("Google Name:", googleName);
 
       if (!googleEmail) {
         alert("Unable to get your Google account email.");
@@ -77,9 +88,16 @@ export default function Login() {
       // Save login information
       localStorage.setItem("userEmail", googleEmail);
       localStorage.setItem("userRole", userRole);
+      if (googleName) {
+        localStorage.setItem("userName", googleName);
+      }
+      if (googleAvatar) {
+        localStorage.setItem("userAvatar", googleAvatar);
+      }
 
       console.log("Google user:", {
         email: googleEmail,
+        name: googleName,
         role: userRole,
       });
 

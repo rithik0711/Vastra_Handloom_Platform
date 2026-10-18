@@ -18,7 +18,7 @@ import {
 
 const RAG_API_URL = "http://localhost:5000/api/rag/query";
 
-const QUICK_PROMPTS = [
+const MANUFACTURER_QUICK_PROMPTS = [
   "📋 Summarize pending orders",
   "🧵 Kanchipuram silk warp & weft specs",
   "💰 Calculate pricing for bridal Zari saree",
@@ -26,7 +26,20 @@ const QUICK_PROMPTS = [
   "✨ Silk saree care & preservation guide"
 ];
 
-export default function RAG() {
+const CUSTOMER_QUICK_PROMPTS = [
+  "✨ Silk saree care & preservation guide",
+  "🏷️ How to verify Silk Mark & GI Tag certification?",
+  "🧵 How are handloom pit-loom sarees woven?",
+  "👗 Best saree recommendations for weddings",
+  "📦 How to track my bespoke loom order?"
+];
+
+export default function RAG({
+  role = "manufacturer",
+  title = role === "customer" ? "Vastra Handloom AI Guide" : "Vastra AI Assistant",
+  subtitle = role === "customer" ? "Artisan Silk & Handloom Support" : "Kathar Weaves • Handloom Intelligence",
+  quickPrompts = role === "customer" ? CUSTOMER_QUICK_PROMPTS : MANUFACTURER_QUICK_PROMPTS
+}) {
   const [isOpen, setIsOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isVoiceEnabled, setIsVoiceEnabled] = useState(false);
@@ -35,11 +48,16 @@ export default function RAG() {
   const [copiedIndex, setCopiedIndex] = useState(null);
   const [hasNewNotification, setHasNewNotification] = useState(true);
 
+  const welcomeText =
+    role === "customer"
+      ? "Namaste! 🙏 I am your **Vastra Handloom AI Guide**. How can I assist you with authentic silk sarees, handloom weaves, GI tags, or custom loom bookings today?"
+      : "Namaste! 🙏 I am your **Vastra AI Artisan Assistant**. How can I assist you with handloom products, production, yarns, silk care, or manufacturing today?";
+
   const [messages, setMessages] = useState([
     {
       id: "welcome-1",
       sender: "ai",
-      text: "Namaste! 🙏 I am your **Vastra AI Artisan Assistant**. How can I assist you with handloom products, production, yarns, silk care, or manufacturing today?",
+      text: welcomeText,
       timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
     }
   ]);
@@ -185,7 +203,7 @@ export default function RAG() {
               <div>
                 <div className="flex items-center gap-2">
                   <h3 className="font-serif text-sm font-bold tracking-tight text-[#FAF5EE]">
-                    Vastra AI Assistant
+                    {title}
                   </h3>
                   <span className="flex items-center gap-1 rounded-full border border-[#D09229]/30 bg-[#D09229]/25 px-2 py-0.5 text-[9px] font-bold text-[#FCDA8B]">
                     <Sparkles className="h-2.5 w-2.5" />
@@ -193,7 +211,7 @@ export default function RAG() {
                   </span>
                 </div>
                 <p className="text-[11px] text-[#F3E7DA]/80">
-                  Kathar Weaves • Handloom Intelligence
+                  {subtitle}
                 </p>
               </div>
             </div>
@@ -390,7 +408,7 @@ export default function RAG() {
             </div>
 
             <div className="no-scrollbar flex gap-1.5 overflow-x-auto pb-1">
-              {QUICK_PROMPTS.map((prompt, index) => (
+              {quickPrompts.map((prompt, index) => (
                 <button
                   key={index}
                   type="button"
