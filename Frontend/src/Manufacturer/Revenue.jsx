@@ -294,28 +294,7 @@ export const Revenue = () => {
               </p>
 
               {/* Manufacturer ID Pill */}
-              <div className="inline-flex items-center gap-1.5 rounded-full border border-[#E5DCD0] bg-white px-3 py-1 shadow-sm">
-                <Building2 size={12} className="text-[#A16B16]" />
-                <span className="text-[11px] font-semibold text-[#7A6D61]">
-                  ID:
-                </span>
-                <span className="font-mono text-[11px] font-bold text-[#4A1525]">
-                  {String(displayId).slice(0, 10)}
-                  {String(displayId).length > 10 ? "..." : ""}
-                </span>
-                <button
-                  type="button"
-                  onClick={handleCopyId}
-                  title="Copy full Manufacturer ID"
-                  className="ml-1 text-[#9B8068] transition hover:text-[#4A1525]"
-                >
-                  {copied ? (
-                    <Check size={12} className="text-emerald-600" />
-                  ) : (
-                    <Copy size={12} />
-                  )}
-                </button>
-              </div>
+
             </div>
 
             <div className="mt-2 flex flex-wrap items-center gap-3">
@@ -357,11 +336,10 @@ export const Revenue = () => {
                 <button
                   key={item}
                   onClick={() => setPeriod(item)}
-                  className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
-                    period === item
+                  className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${period === item
                       ? "bg-[#4A1525] text-white shadow-sm"
                       : "text-[#7A6D61] hover:bg-[#FAF6F0]"
-                  }`}
+                    }`}
                 >
                   {item}
                 </button>
@@ -506,9 +484,9 @@ export const Revenue = () => {
                     const height =
                       item.revenue > 0
                         ? Math.max(
-                            (item.revenue / maxRevenue) * 100,
-                            10
-                          )
+                          (item.revenue / maxRevenue) * 100,
+                          10
+                        )
                         : 4;
 
                     return (
@@ -699,11 +677,10 @@ export const Revenue = () => {
 
                         <td className="px-5 py-4">
                           <span
-                            className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${
-                              order.payment === "Paid" || order.payment === "Advance Paid"
+                            className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${order.payment === "Paid" || order.payment === "Advance Paid"
                                 ? "bg-[#EAF6ED] text-[#2E7D32]"
                                 : "bg-[#FFF4DF] text-[#A16B16]"
-                            }`}
+                              }`}
                           >
                             {order.payment || "Pending"}
                           </span>

@@ -38,6 +38,7 @@ app.get("/", (req, res) => {
 });
 
 // Mount Routes
+app.use("/api/products", require("./Customer/Products"));
 app.use("/api/rag", ragRoutes);
 app.use("/api/manufacturer", manufacturerRoutes);
 app.use("/api/customer", customerRoutes);

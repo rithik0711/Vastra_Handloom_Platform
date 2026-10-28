@@ -1,6 +1,7 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const router = express.Router();
+const { uploadToCloudinary } = require("../cloudinary");
 
 // Exact MongoDB Schema for the 'Gallery' collection with manufacturerId
 const gallerySchema = new mongoose.Schema(
@@ -98,12 +99,17 @@ router.post("/", async (req, res) => {
       });
     }
 
+    let imageUrl = image.trim();
+    if (!imageUrl.startsWith("http://") && !imageUrl.startsWith("https://")) {
+      imageUrl = await uploadToCloudinary(imageUrl, "vastra_gallery", `gallery_${Date.now()}`);
+    }
+
     const payload = {
       manufacturerId: manufacturerId || "kathar_weaves",
       title: title.trim(),
       category: category || "Workshop",
       description: description ? description.trim() : "",
-      image: image.trim(),
+      image: imageUrl,
       featured: Boolean(featured),
       createdAt: new Date()
     };

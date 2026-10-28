@@ -3,8 +3,8 @@ const mongoose = require("mongoose");
 const crypto = require("crypto");
 const QRCode = require("qrcode");
 const router = express.Router();
-
 const os = require("os");
+const { uploadToCloudinary } = require("../cloudinary");
 
 // Helper to get local network IP address so mobile phones on the same Wi-Fi can open the URL
 const getLocalIpAddress = () => {
@@ -123,6 +123,7 @@ const ProductModel =
   mongoose.model("Product", productSchema, "Products");
 
 // 1. GET all products from DB for Customer Explore
+// Performance Optimization: Uses MongoDB projection to completely exclude heavy base64 'image' and 'qrCode' fields
 router.get("/", async (req, res) => {
   try {
     const { category, search, fabric, weave, manufacturerId, artisan } = req.query;
@@ -169,49 +170,22 @@ router.get("/", async (req, res) => {
       }
     }
 
-    const items = await ProductModel.find(query).sort({ createdAt: -1 });
+    // Now that images are hosted on Cloudinary (~85-byte CDN URLs instead of 500KB base64 strings),
+    // we include 'image' in the list response while keeping the large base64 'qrCode' excluded.
+    const items = await ProductModel.find(query)
+      .select("-qrCode")
+      .sort({ createdAt: -1 })
+      .lean();
 
-    const formatted = await Promise.all(
-      items.map(async (doc) => {
-        const item = doc.toObject ? doc.toObject() : doc;
-        let uniqueId = item.uniqueId;
-        let qrCode = item.qrCode;
-        let qrData = item.qrData;
-
-        if (!uniqueId || !qrCode) {
-          if (!uniqueId) uniqueId = generateUniqueId(item.category || "Silk");
-          const generated = await generateProductQRCode({
-            uniqueId,
-            code: item.code || `KW-${(item.category || "GEN").slice(0, 3).toUpperCase()}-001`,
-            name: item.name,
-            category: item.category,
-            fabric: item.fabric,
-            weave: item.weave,
-            price: item.price,
-            manufacturerId: item.manufacturerId || item.artisan || "kathar_weaves"
-          });
-          qrCode = generated.qrCode;
-          qrData = generated.qrData;
-
-          ProductModel.updateOne(
-            { _id: item._id },
-            { $set: { uniqueId, qrCode, qrData } }
-          ).catch((e) => console.error("Backfill error:", e));
-        }
-
-        const artisanNameClean = formatWeaverName(item.artisanName || item.artisan || item.manufacturerId);
-
-        return {
-          ...item,
-          artisan: artisanNameClean,
-          artisanName: artisanNameClean,
-          weaver: artisanNameClean,
-          uniqueId,
-          qrCode,
-          qrData
-        };
-      })
-    );
+    const formatted = items.map((item) => {
+      const artisanNameClean = formatWeaverName(item.artisanName || item.artisan || item.manufacturerId);
+      return {
+        ...item,
+        artisan: artisanNameClean,
+        artisanName: artisanNameClean,
+        weaver: artisanNameClean
+      };
+    });
 
     return res.json({
       status: "success",
@@ -225,6 +199,7 @@ router.get("/", async (req, res) => {
 });
 
 // 2. GET single product by ID / uniqueId / code
+// [Change 2]: Dedicated single product endpoint that explicitly fetches and includes 'image' and 'qrCode'
 router.get("/:id", async (req, res) => {
   try {
     const rawId = req.params.id ? decodeURIComponent(req.params.id).trim() : "";
@@ -243,7 +218,8 @@ router.get("/:id", async (req, res) => {
       searchConditions.unshift({ _id: new mongoose.Types.ObjectId(rawId) });
     }
 
-    let item = await ProductModel.findOne({ $or: searchConditions });
+    // Explicitly include all fields including base64 image and qrCode for item details view
+    let item = await ProductModel.findOne({ $or: searchConditions }).select("+image +qrCode");
 
     // Fallback: search by partial uniqueId or name
     if (!item) {
@@ -252,7 +228,7 @@ router.get("/:id", async (req, res) => {
           { uniqueId: { $regex: new RegExp(rawId.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i") } },
           { name: { $regex: new RegExp(rawId.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i") } }
         ]
-      });
+      }).select("+image +qrCode");
     }
 
     if (!item) {
@@ -260,6 +236,8 @@ router.get("/:id", async (req, res) => {
     }
 
     let pObj = item.toObject ? item.toObject() : item;
+
+    // Only backfill/generate QR code for this single product if missing
     if (!pObj.uniqueId || !pObj.qrCode) {
       if (!pObj.uniqueId) pObj.uniqueId = generateUniqueId(pObj.category || "Silk");
       const generated = await generateProductQRCode({
@@ -292,6 +270,149 @@ router.get("/:id", async (req, res) => {
     });
   } catch (error) {
     console.error("Get Single Product Error:", error);
+    return res.status(500).json({ status: "error", message: error.message });
+  }
+});
+
+// 3. CREATE new product with Cloudinary image upload and QR code
+router.post("/", async (req, res) => {
+  try {
+    const {
+      name,
+      category,
+      fabric,
+      weave,
+      price,
+      stock,
+      maxStock,
+      image,
+      description,
+      featured,
+      manufacturerId,
+      artisan,
+      artisanName,
+      origin,
+      tag
+    } = req.body;
+
+    if (!name || !price) {
+      return res.status(400).json({ status: "error", message: "Name and price are required" });
+    }
+
+    const mfrId = manufacturerId || artisan || "kathar_weaves";
+    const count = await ProductModel.countDocuments({ manufacturerId: mfrId });
+    const categoryPrefix = (category || "SILK").slice(0, 3).toUpperCase();
+    const code = `KW-${categoryPrefix}-${String(count + 1).padStart(3, "0")}`;
+    const uniqueId = generateUniqueId(category);
+    const stockNum = Number(stock) || 1;
+
+    // Upload to Cloudinary if provided as Base64 Data URI
+    let imageUrl = "";
+    if (image && typeof image === "string" && image.trim()) {
+      imageUrl = await uploadToCloudinary(image, "vastra_products", `product_${uniqueId}`);
+    }
+
+    const { qrCode, qrData } = await generateProductQRCode({
+      uniqueId,
+      code,
+      name: name.trim(),
+      category: category || "Silk",
+      fabric: fabric || "Handloom Silk",
+      weave: weave || "Hand Woven",
+      price: Number(price),
+      manufacturerId: mfrId
+    });
+
+    const newProduct = await ProductModel.create({
+      manufacturerId: mfrId,
+      uniqueId,
+      code,
+      name: name.trim(),
+      category: category || "Silk",
+      fabric: fabric || "Pure Silk",
+      weave: weave || "Hand Woven",
+      price: Number(price),
+      stock: stockNum,
+      maxStock: Number(maxStock) || 20,
+      status: stockNum > 5 ? "In Stock" : stockNum > 0 ? "Low Stock" : "Out of Stock",
+      image: imageUrl,
+      featured: Boolean(featured),
+      description: description ? description.trim() : "",
+      artisan: artisan || mfrId,
+      artisanName: artisanName || formatWeaverName(mfrId),
+      origin: origin || "",
+      tag: tag || "Silk Mark Certified",
+      qrCode,
+      qrData
+    });
+
+    return res.status(201).json({
+      status: "success",
+      message: "Product created with Cloudinary image and QR Code successfully",
+      data: newProduct
+    });
+  } catch (error) {
+    console.error("Product Create Error:", error);
+    return res.status(500).json({ status: "error", message: error.message });
+  }
+});
+
+// 4. UPDATE product with Cloudinary image upload
+router.put("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updateData = { ...req.body };
+
+    if (updateData.stock !== undefined) {
+      const stockNum = Number(updateData.stock);
+      updateData.stock = stockNum;
+      updateData.status = stockNum > 5 ? "In Stock" : stockNum > 0 ? "Low Stock" : "Out of Stock";
+    }
+
+    let existing = mongoose.Types.ObjectId.isValid(id)
+      ? await ProductModel.findById(id)
+      : await ProductModel.findOne({ _id: id });
+
+    if (!existing) {
+      return res.status(404).json({ status: "error", message: "Product not found" });
+    }
+
+    const uniqueId = existing.uniqueId || generateUniqueId(updateData.category || existing.category);
+    updateData.uniqueId = uniqueId;
+
+    // Upload new image to Cloudinary if Base64
+    if (updateData.image && typeof updateData.image === "string" && updateData.image.trim()) {
+      if (!updateData.image.startsWith("http://") && !updateData.image.startsWith("https://")) {
+        updateData.image = await uploadToCloudinary(
+          updateData.image,
+          "vastra_products",
+          `product_${uniqueId}`
+        );
+      }
+    }
+
+    const { qrCode, qrData } = await generateProductQRCode({
+      uniqueId,
+      code: updateData.code || existing.code,
+      name: updateData.name || existing.name,
+      category: updateData.category || existing.category,
+      fabric: updateData.fabric || existing.fabric,
+      weave: updateData.weave || existing.weave,
+      price: updateData.price || existing.price,
+      manufacturerId: updateData.manufacturerId || existing.manufacturerId
+    });
+    updateData.qrCode = qrCode;
+    updateData.qrData = qrData;
+
+    let updated = await ProductModel.findByIdAndUpdate(existing._id, updateData, { new: true });
+
+    return res.json({
+      status: "success",
+      message: "Product updated with Cloudinary image successfully",
+      data: updated
+    });
+  } catch (error) {
+    console.error("Product Update Error:", error);
     return res.status(500).json({ status: "error", message: error.message });
   }
 });

@@ -3,8 +3,8 @@ const mongoose = require("mongoose");
 const crypto = require("crypto");
 const QRCode = require("qrcode");
 const router = express.Router();
-
 const os = require("os");
+const { uploadToCloudinary } = require("../cloudinary");
 
 // Helper to get local network IP address so mobile phones on the same Wi-Fi can open the URL
 const getLocalIpAddress = () => {
@@ -273,6 +273,12 @@ router.post("/", async (req, res) => {
     const uniqueId = generateUniqueId(category);
     const stockNum = Number(stock) || 1;
 
+    // Upload image to Cloudinary if provided as Base64 or local file
+    let imageUrl = "";
+    if (image && typeof image === "string" && image.trim()) {
+      imageUrl = await uploadToCloudinary(image, "vastra_products", `product_${uniqueId}`);
+    }
+
     // Generate authentic QR code Data URL containing product info and authenticity verification
     const { qrCode, qrData } = await generateProductQRCode({
       uniqueId,
@@ -297,7 +303,7 @@ router.post("/", async (req, res) => {
       stock: stockNum,
       maxStock: Number(maxStock) || 20,
       status: stockNum > 5 ? "In Stock" : stockNum > 0 ? "Low Stock" : "Out of Stock",
-      image: image || "",
+      image: imageUrl,
       featured: Boolean(featured),
       description: description ? description.trim() : "",
       qrCode,
@@ -337,6 +343,17 @@ router.put("/:id", async (req, res) => {
 
     const uniqueId = existing.uniqueId || generateUniqueId(updateData.category || existing.category);
     updateData.uniqueId = uniqueId;
+
+    // If image is being updated with a new Base64 string, upload to Cloudinary
+    if (updateData.image && typeof updateData.image === "string" && updateData.image.trim()) {
+      if (!updateData.image.startsWith("http://") && !updateData.image.startsWith("https://")) {
+        updateData.image = await uploadToCloudinary(
+          updateData.image,
+          "vastra_products",
+          `product_${uniqueId}`
+        );
+      }
+    }
 
     // Refresh QR Code with updated details
     const { qrCode, qrData } = await generateProductQRCode({
