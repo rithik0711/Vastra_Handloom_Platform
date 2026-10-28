@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { API_BASE_URL } from "../config";
 import { useNavigate } from "react-router-dom";
 import CustomerSidebar from "./Sidebar";
 import {
@@ -52,7 +53,7 @@ export default function CustomerDesign() {
     setLoading(true);
     try {
       const res = await fetch(
-        `http://localhost:5000/api/customer/design?customerEmail=${encodeURIComponent(userEmail)}`
+        `${API_BASE_URL}/api/customer/design?customerEmail=${encodeURIComponent(userEmail)}`
       );
       const json = await res.json();
       if (json.status === "success" && Array.isArray(json.data)) {
@@ -75,7 +76,7 @@ export default function CustomerDesign() {
     setGeneratingImageId(id);
 
     try {
-      const res = await fetch("http://localhost:5000/api/customer/design/generate-image", {
+      const res = await fetch(`${API_BASE_URL}/api/customer/design/generate-image`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -112,7 +113,7 @@ export default function CustomerDesign() {
     if (!window.confirm("Are you sure you want to delete this custom saree blueprint?")) return;
 
     try {
-      await fetch(`http://localhost:5000/api/customer/design/${id}`, { method: "DELETE" });
+      await fetch(`${API_BASE_URL}/api/customer/design/${id}`, { method: "DELETE" });
     } catch (err) {
       console.warn("Delete design err:", err);
     }

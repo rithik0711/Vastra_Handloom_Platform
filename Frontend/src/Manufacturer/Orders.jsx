@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { API_BASE_URL } from "../config";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import RAG from "./RAG";
@@ -42,7 +43,7 @@ export default function Orders() {
     try {
       setLoading(true);
       const response = await fetch(
-        `http://localhost:5000/api/manufacturer/booking?manufacturerId=${encodeURIComponent(
+        `${API_BASE_URL}/api/manufacturer/booking?manufacturerId=${encodeURIComponent(
           userEmail
         )}`
       );
@@ -104,7 +105,7 @@ export default function Orders() {
     try {
       setUpdatingId(orderId);
       const response = await fetch(
-        `http://localhost:5000/api/manufacturer/booking/${orderId}/status`,
+        `${API_BASE_URL}/api/manufacturer/booking/${orderId}/status`,
         {
           method: "PATCH",
           headers: {

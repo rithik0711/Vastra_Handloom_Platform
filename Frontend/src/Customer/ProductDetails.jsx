@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { API_BASE_URL } from "../config";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import CustomerSidebar from "./Sidebar";
 import {
@@ -55,14 +56,14 @@ export default function ProductDetails() {
   const fetchProductAndCatalog = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`http://localhost:5000/api/customer/products/${id}`);
+      const res = await fetch(`${API_BASE_URL}/api/customer/products/${id}`);
       const json = await res.json();
       if (json.status === "success" && json.data) {
         setProduct(json.data);
         setSelectedImage(json.data.image || "/images/kanchi.png");
       }
 
-      const resList = await fetch("http://localhost:5000/api/customer/products");
+      const resList = await fetch(`${API_BASE_URL}/api/customer/products`);
       const jsonList = await resList.json();
       if (jsonList.status === "success" && Array.isArray(jsonList.data)) {
         setAllProducts(jsonList.data);
@@ -89,7 +90,7 @@ export default function ProductDetails() {
 
     if (userEmail && product) {
       try {
-        await fetch("http://localhost:5000/api/customer/wishlist", {
+        await fetch(`${API_BASE_URL}/api/customer/wishlist`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

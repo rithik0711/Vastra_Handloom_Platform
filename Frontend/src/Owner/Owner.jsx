@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { API_BASE_URL } from "../config";
 import OwnerSidebar from "./Sidebar";
 import {
   TrendingUp,
@@ -73,7 +74,7 @@ export default function Owner() {
   ]);
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/owner/overview")
+    fetch(`${API_BASE_URL}/api/owner/overview`)
       .then((res) => res.json())
       .then((json) => {
         if (json.status === "success" && json.data) {
@@ -82,7 +83,7 @@ export default function Owner() {
       })
       .catch((err) => console.log("Using cached owner overview:", err));
 
-    fetch("http://localhost:5000/api/owner/manufacturers")
+    fetch(`${API_BASE_URL}/api/owner/manufacturers`)
       .then((res) => res.json())
       .then((json) => {
         if (json.status === "success" && json.data) {
@@ -99,7 +100,7 @@ export default function Owner() {
       )
     );
 
-    fetch(`http://localhost:5000/api/owner/manufacturers/${id}/verify`, {
+    fetch(`${API_BASE_URL}/api/owner/manufacturers/${id}/verify`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status: "Verified" })

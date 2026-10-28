@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { API_BASE_URL } from "../config";
 import { Link, useNavigate } from "react-router-dom";
 import CustomerSidebar from "./Sidebar";
 import RAG from "../Manufacturer/RAG";
@@ -76,7 +77,7 @@ function OrderModal({ product, onClose }) {
 
   useEffect(() => {
     if (userEmail) {
-      fetch(`http://localhost:5000/api/customer/profile?email=${encodeURIComponent(userEmail)}`)
+      fetch(`${API_BASE_URL}/api/customer/profile?email=${encodeURIComponent(userEmail)}`)
         .then((r) => r.json())
         .then((j) => {
           if (j.status === "success" && j.data) {
@@ -395,7 +396,7 @@ export default function CustomerDashboard() {
   useEffect(() => {
     fetchProducts();
     if (userEmail) {
-      fetch(`http://localhost:5000/api/customer/wishlist?customerEmail=${encodeURIComponent(userEmail)}`)
+      fetch(`${API_BASE_URL}/api/customer/wishlist?customerEmail=${encodeURIComponent(userEmail)}`)
         .then((r) => r.json())
         .then((j) => {
           if (j.status === "success" && Array.isArray(j.data)) {
@@ -411,7 +412,7 @@ export default function CustomerDashboard() {
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:5000/api/customer/products");
+      const res = await fetch(`${API_BASE_URL}/api/customer/products`);
       const json = await res.json();
       if (json.status === "success" && Array.isArray(json.data) && json.data.length > 0) {
         setProducts(json.data);
@@ -438,7 +439,7 @@ export default function CustomerDashboard() {
 
     if (userEmail) {
       try {
-        await fetch("http://localhost:5000/api/customer/wishlist", {
+        await fetch(`${API_BASE_URL}/api/customer/wishlist`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { API_BASE_URL } from "../config";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import RAG from "./RAG";
@@ -48,13 +49,13 @@ export default function OrderDetails() {
   const fetchOrderDetails = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`http://localhost:5000/api/customer/orders/${id}`);
+      const res = await fetch(`${API_BASE_URL}/api/customer/orders/${id}`);
       const json = await res.json();
       if (json.status === "success" && json.data) {
         setOrder(json.data);
       } else {
         // Fallback fetch all orders and find
-        const resAll = await fetch(`http://localhost:5000/api/manufacturer/orders?manufacturerId=${encodeURIComponent(userEmail)}`);
+        const resAll = await fetch(`${API_BASE_URL}/api/manufacturer/orders?manufacturerId=${encodeURIComponent(userEmail)}`);
         const jsonAll = await resAll.json();
         if (jsonAll.status === "success" && Array.isArray(jsonAll.data)) {
           const found = jsonAll.data.find((o) => (o.orderId || o._id || o.id) === id);
@@ -79,7 +80,7 @@ export default function OrderDetails() {
     const orderKey = order._id || order.id || order.orderId;
 
     try {
-      const res = await fetch(`http://localhost:5000/api/manufacturer/orders/${orderKey}/status`, {
+      const res = await fetch(`${API_BASE_URL}/api/manufacturer/orders/${orderKey}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus })

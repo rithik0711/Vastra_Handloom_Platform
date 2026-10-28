@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { API_BASE_URL } from "../config";
 import { Link, useNavigate } from "react-router-dom";
 import CustomerSidebar from "./Sidebar";
 import { Heart, Sparkles, ShoppingBag, ArrowRight, CheckCircle2, Trash2, X, Eye, Tag } from "lucide-react";
@@ -24,7 +25,7 @@ export default function Wishlist() {
         return;
       }
       const res = await fetch(
-        `http://localhost:5000/api/customer/wishlist?customerId=${encodeURIComponent(activeId)}&customerEmail=${encodeURIComponent(userEmail)}`
+        `${API_BASE_URL}/api/customer/wishlist?customerId=${encodeURIComponent(activeId)}&customerEmail=${encodeURIComponent(userEmail)}`
       );
       const json = await res.json();
       if (json.status === "success" && Array.isArray(json.data)) {
@@ -33,7 +34,7 @@ export default function Wishlist() {
           json.data.map(async (item) => {
             const pId = item.productId || item.code || item._id;
             try {
-              const prodRes = await fetch(`http://localhost:5000/api/customer/products/${pId}`);
+              const prodRes = await fetch(`${API_BASE_URL}/api/customer/products/${pId}`);
               const prodJson = await prodRes.json();
               if (prodJson.status === "success" && prodJson.data) {
                 return { ...item, ...prodJson.data, productId: pId, _id: item._id };
@@ -61,7 +62,7 @@ export default function Wishlist() {
     try {
       const activeId = customerId || userEmail;
       await fetch(
-        `http://localhost:5000/api/customer/wishlist/${encodeURIComponent(prodId)}?customerId=${encodeURIComponent(activeId)}&customerEmail=${encodeURIComponent(userEmail)}`,
+        `${API_BASE_URL}/api/customer/wishlist/${encodeURIComponent(prodId)}?customerId=${encodeURIComponent(activeId)}&customerEmail=${encodeURIComponent(userEmail)}`,
         { method: "DELETE" }
       );
       const updated = wishlistItems.filter(

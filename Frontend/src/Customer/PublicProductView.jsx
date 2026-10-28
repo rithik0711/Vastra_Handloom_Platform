@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { API_BASE_URL } from "../config";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   Sparkles,
@@ -70,7 +71,7 @@ export default function PublicProductView() {
 
       // 1. Try fetching from host / customer endpoint
       try {
-        const res = await fetch(`http://${host}:5000/api/customer/products/${encodeURIComponent(cleanId)}`);
+        const res = await fetch(`${API_BASE_URL}/api/customer/products/${encodeURIComponent(cleanId)}`);
         const json = await res.json();
         if (json.status === "success" && json.data) {
           setProduct(json.data);
@@ -82,7 +83,7 @@ export default function PublicProductView() {
 
       // 2. Try fetching from localhost / customer endpoint
       try {
-        const resLocal = await fetch(`http://localhost:5000/api/customer/products/${encodeURIComponent(cleanId)}`);
+        const resLocal = await fetch(`${API_BASE_URL}/api/customer/products/${encodeURIComponent(cleanId)}`);
         const jsonLocal = await resLocal.json();
         if (jsonLocal.status === "success" && jsonLocal.data) {
           setProduct(jsonLocal.data);
@@ -94,7 +95,7 @@ export default function PublicProductView() {
 
       // 3. Fallback: Fetch entire catalog and match in client
       try {
-        const resCatalog = await fetch(`http://localhost:5000/api/customer/products`);
+        const resCatalog = await fetch(`${API_BASE_URL}/api/customer/products`);
         const jsonCatalog = await resCatalog.json();
         if (jsonCatalog.status === "success" && Array.isArray(jsonCatalog.data) && jsonCatalog.data.length > 0) {
           const match = jsonCatalog.data.find(
@@ -203,7 +204,7 @@ export default function PublicProductView() {
         status: "Confirmed"
       };
 
-      const res = await fetch(`http://${host}:5000/api/customer/orders`, {
+      const res = await fetch(`${API_BASE_URL}/api/customer/orders`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)

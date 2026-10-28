@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { API_BASE_URL } from "../config";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import RAG from "./RAG";
@@ -59,7 +60,7 @@ export default function Products() {
     try {
       setLoading(true);
       const res = await fetch(
-        `http://localhost:5000/api/manufacturer/products?manufacturerId=${encodeURIComponent(userEmail)}`
+        `${API_BASE_URL}/api/manufacturer/products?manufacturerId=${encodeURIComponent(userEmail)}`
       );
       const json = await res.json();
       if (json.status === "success" && json.data) {
@@ -203,8 +204,8 @@ export default function Products() {
     try {
       setSubmitting(true);
       const url = editingProduct
-        ? `http://localhost:5000/api/manufacturer/products/${editingProduct.id || editingProduct._id}`
-        : "http://localhost:5000/api/manufacturer/products";
+        ? `${API_BASE_URL}/api/manufacturer/products/${editingProduct.id || editingProduct._id}`
+        : `${API_BASE_URL}/api/manufacturer/products`;
       const method = editingProduct ? "PUT" : "POST";
 
       const res = await fetch(url, {
@@ -247,7 +248,7 @@ export default function Products() {
     }
 
     try {
-      const res = await fetch(`http://localhost:5000/api/manufacturer/products/${id}`, {
+      const res = await fetch(`${API_BASE_URL}/api/manufacturer/products/${id}`, {
         method: "DELETE"
       });
       const json = await res.json();

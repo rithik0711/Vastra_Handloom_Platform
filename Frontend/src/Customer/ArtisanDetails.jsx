@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import CustomerSidebar from "./Sidebar";
+import { API_BASE_URL } from "../config";
 import {
   ChevronLeft,
   Award,
@@ -74,7 +75,7 @@ export default function ArtisanDetails() {
     setLoading(true);
     try {
       // 1. Fetch Artisan Profile
-      const resArt = await fetch(`http://localhost:5000/api/customer/manufacturers/${id || "kathar_weaves"}`);
+      const resArt = await fetch(`${API_BASE_URL}/api/customer/manufacturers/${id || "kathar_weaves"}`);
       const jsonArt = await resArt.json();
       let artisanData = null;
       if (jsonArt.status === "success" && jsonArt.data) {
@@ -86,7 +87,7 @@ export default function ArtisanDetails() {
 
       // 2. Fetch Manufacturer's Own Products
       const resProd = await fetch(
-        `http://localhost:5000/api/customer/products?manufacturerId=${encodeURIComponent(mfrName)}`
+        `${API_BASE_URL}/api/customer/products?manufacturerId=${encodeURIComponent(mfrName)}`
       );
       const jsonProd = await resProd.json();
       if (jsonProd.status === "success" && Array.isArray(jsonProd.data)) {
@@ -94,7 +95,7 @@ export default function ArtisanDetails() {
           setArtisanProducts(jsonProd.data);
         } else {
           // Fallback to all products if specific manufacturer has none yet
-          const allRes = await fetch("http://localhost:5000/api/customer/products");
+          const allRes = await fetch(`${API_BASE_URL}/api/customer/products`);
           const allJson = await allRes.json();
           if (allJson.status === "success" && Array.isArray(allJson.data)) {
             setArtisanProducts(allJson.data);
@@ -104,13 +105,13 @@ export default function ArtisanDetails() {
 
       // 3. Fetch Manufacturer Gallery
       const resGal = await fetch(
-        `http://localhost:5000/api/manufacturer/gallery?manufacturerId=${encodeURIComponent(mfrName)}`
+        `${API_BASE_URL}/api/manufacturer/gallery?manufacturerId=${encodeURIComponent(mfrName)}`
       );
       const jsonGal = await resGal.json();
       if (jsonGal.status === "success" && Array.isArray(jsonGal.data) && jsonGal.data.length > 0) {
         setGalleryItems(jsonGal.data);
       } else {
-        const allGal = await fetch("http://localhost:5000/api/manufacturer/gallery");
+        const allGal = await fetch(`${API_BASE_URL}/api/manufacturer/gallery`);
         const allGalJson = await allGal.json();
         if (allGalJson.status === "success" && Array.isArray(allGalJson.data)) {
           setGalleryItems(allGalJson.data);
@@ -118,7 +119,7 @@ export default function ArtisanDetails() {
       }
 
       // 4. Fetch Reviews
-      const resRev = await fetch(`http://localhost:5000/api/customer/reviews?manufacturer=${encodeURIComponent(mfrName)}`);
+      const resRev = await fetch(`${API_BASE_URL}/api/customer/reviews?manufacturer=${encodeURIComponent(mfrName)}`);
       const jsonRev = await resRev.json();
       if (jsonRev.status === "success" && Array.isArray(jsonRev.data)) {
         setReviews(jsonRev.data);
@@ -133,7 +134,7 @@ export default function ArtisanDetails() {
   const handleReviewSubmit = async (e) => {
     e.preventDefault();
     try {
-      await fetch("http://localhost:5000/api/customer/reviews", {
+      await fetch(`${API_BASE_URL}/api/customer/reviews`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

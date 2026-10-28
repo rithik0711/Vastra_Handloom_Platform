@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { API_BASE_URL } from "../config";
 import { useLocation, useNavigate } from "react-router-dom";
 import CustomerSidebar from "./Sidebar";
 import {
@@ -51,8 +52,8 @@ export default function CustomerOrder() {
     setLoading(true);
     try {
       const [resOrders, resBookings] = await Promise.all([
-        fetch(`http://localhost:5000/api/customer/orders?customerEmail=${encodeURIComponent(userEmail)}`),
-        fetch(`http://localhost:5000/api/customer/bookings?customerEmail=${encodeURIComponent(userEmail)}`)
+        fetch(`${API_BASE_URL}/api/customer/orders?customerEmail=${encodeURIComponent(userEmail)}`),
+        fetch(`${API_BASE_URL}/api/customer/bookings?customerEmail=${encodeURIComponent(userEmail)}`)
       ]);
 
       const jsonOrders = await resOrders.json();

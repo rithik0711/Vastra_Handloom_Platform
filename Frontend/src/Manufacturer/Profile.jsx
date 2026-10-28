@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { API_BASE_URL } from "../config";
 import Sidebar from "./Sidebar";
 import RAG from "./RAG";
 
@@ -29,7 +30,7 @@ export default function Profile() {
   const fetchProfile = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`http://localhost:5000/api/manufacturer/profile?email=${encodeURIComponent(userEmail)}`);
+      const res = await fetch(`${API_BASE_URL}/api/manufacturer/profile?email=${encodeURIComponent(userEmail)}`);
       const json = await res.json();
       if (json.status === "success" && json.data) {
         setProfile((prev) => ({ ...prev, ...json.data, email: userEmail }));
@@ -56,7 +57,7 @@ export default function Profile() {
   const handleSave = async () => {
     try {
       setSaving(true);
-      const res = await fetch("http://localhost:5000/api/manufacturer/profile", {
+      const res = await fetch(`${API_BASE_URL}/api/manufacturer/profile`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...profile, email: userEmail })

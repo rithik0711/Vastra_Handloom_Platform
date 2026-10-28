@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { API_BASE_URL } from "../config";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import RAG from "./RAG";
@@ -61,7 +62,7 @@ export const Revenue = () => {
 
       // 1. Fetch from dedicated Revenue endpoint by ID
       const response = await fetch(
-        `http://localhost:5000/api/manufacturer/revenue/${targetId}`
+        `${API_BASE_URL}/api/manufacturer/revenue/${targetId}`
       );
 
       const resData = await response.json();
@@ -73,7 +74,7 @@ export const Revenue = () => {
       } else {
         // Fallback to orders endpoint by manufacturerId
         const fallbackRes = await fetch(
-          `http://localhost:5000/api/manufacturer/orders?manufacturerId=${targetId}`
+          `${API_BASE_URL}/api/manufacturer/orders?manufacturerId=${targetId}`
         );
         const fallbackData = await fallbackRes.json();
 

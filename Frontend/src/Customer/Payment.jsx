@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { API_BASE_URL } from "../config";
 import { useLocation, useNavigate } from "react-router-dom";
 import CustomerSidebar from "./Sidebar";
 import {
@@ -87,7 +88,7 @@ export default function Payment() {
 
     try {
       if (isCustomBooking) {
-        await fetch("http://localhost:5000/api/customer/bookings", {
+        await fetch(`${API_BASE_URL}/api/customer/bookings`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -99,7 +100,7 @@ export default function Payment() {
           })
         });
       } else {
-        await fetch("http://localhost:5000/api/customer/orders", {
+        await fetch(`${API_BASE_URL}/api/customer/orders`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { API_BASE_URL } from "../config";
 import { useNavigate, useLocation } from "react-router-dom";
 import CustomerSidebar from "./Sidebar";
 import {
@@ -381,7 +382,7 @@ export default function CustomerCreateDesign() {
     setIsGeneratingAiImage(true);
     showNotification("Synthesizing photorealistic saree render with FLUX AI...", "info");
     try {
-      const res = await fetch("http://localhost:5000/api/customer/design/generate-image", {
+      const res = await fetch(`${API_BASE_URL}/api/customer/design/generate-image`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -443,7 +444,7 @@ export default function CustomerCreateDesign() {
 
     setSavingLoading(true);
     try {
-      const res = await fetch("http://localhost:5000/api/customer/design", {
+      const res = await fetch(`${API_BASE_URL}/api/customer/design`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)

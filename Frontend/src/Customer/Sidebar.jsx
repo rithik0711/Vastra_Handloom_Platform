@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { API_BASE_URL } from "../config";
 import { NavLink, useNavigate } from "react-router-dom";
 import {
   ShoppingBag,
@@ -42,7 +43,7 @@ export default function CustomerSidebar() {
 
   React.useEffect(() => {
     if (userEmail) {
-      fetch(`http://localhost:5000/api/customer/wishlist?customerEmail=${encodeURIComponent(userEmail)}`)
+      fetch(`${API_BASE_URL}/api/customer/wishlist?customerEmail=${encodeURIComponent(userEmail)}`)
         .then((r) => r.json())
         .then((j) => {
           if (j.status === "success" && Array.isArray(j.data)) {

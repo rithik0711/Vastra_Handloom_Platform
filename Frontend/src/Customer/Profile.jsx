@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { API_BASE_URL } from "../config";
 import { useNavigate } from "react-router-dom";
 import CustomerSidebar from "./Sidebar";
 import {
@@ -70,7 +71,7 @@ export default function CustomerProfile() {
     setLoading(true);
     try {
       const res = await fetch(
-        `http://localhost:5000/api/customer/profile?email=${encodeURIComponent(userEmail)}&name=${encodeURIComponent(storedName)}&avatar=${encodeURIComponent(storedAvatar)}`
+        `${API_BASE_URL}/api/customer/profile?email=${encodeURIComponent(userEmail)}&name=${encodeURIComponent(storedName)}&avatar=${encodeURIComponent(storedAvatar)}`
       );
       const json = await res.json();
       if (json.status === "success" && json.data) {
@@ -90,7 +91,7 @@ export default function CustomerProfile() {
     e.preventDefault();
     setSaving(true);
     try {
-      const res = await fetch("http://localhost:5000/api/customer/profile", {
+      const res = await fetch(`${API_BASE_URL}/api/customer/profile`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...profile, email: userEmail })

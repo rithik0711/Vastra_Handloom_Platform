@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { API_BASE_URL } from "../config";
 import {
   Sparkles,
   Send,
@@ -16,7 +17,7 @@ import {
 } from "lucide-react";
 
 
-const RAG_API_URL = "http://localhost:5000/api/rag/query";
+const RAG_API_URL = `${API_BASE_URL}/api/rag/query`;
 
 const MANUFACTURER_QUICK_PROMPTS = [
   "📋 Summarize pending orders",

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { API_BASE_URL } from "../config";
 import Sidebar from "./Sidebar";
 import RAG from "./RAG";
 import {
@@ -41,7 +42,7 @@ export default function Customers() {
     try {
       setLoading(true);
       const res = await fetch(
-        `http://localhost:5000/api/manufacturer/customers?manufacturerId=${encodeURIComponent(userEmail)}`
+        `${API_BASE_URL}/api/manufacturer/customers?manufacturerId=${encodeURIComponent(userEmail)}`
       );
       const json = await res.json();
       if (json.status === "success" && json.data) {
@@ -81,7 +82,7 @@ export default function Customers() {
     try {
       setSavingNote(true);
       const res = await fetch(
-        `http://localhost:5000/api/manufacturer/customers/${selectedCustomer.id || selectedCustomer._id}`,
+        `${API_BASE_URL}/api/manufacturer/customers/${selectedCustomer.id || selectedCustomer._id}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { API_BASE_URL } from "../config";
 import { useSearchParams, useNavigate, useLocation } from "react-router-dom";
 import CustomerSidebar from "./Sidebar";
 import {
@@ -64,7 +65,7 @@ export default function CustomerBooking() {
   // Fetch manufacturers, customer profile, and customer designs dynamically from DB
   useEffect(() => {
     // 1. Fetch live manufacturers from DB
-    fetch("http://localhost:5000/api/customer/manufacturers")
+    fetch(`${API_BASE_URL}/api/customer/manufacturers`)
       .then((res) => res.json())
       .then((json) => {
         if (json.status === "success" && Array.isArray(json.data) && json.data.length > 0) {
@@ -83,7 +84,7 @@ export default function CustomerBooking() {
       .catch((err) => console.warn("Manufacturers fetch note:", err));
 
     // 2. Fetch Customer Profile from DB
-    fetch(`http://localhost:5000/api/customer/profile?email=${encodeURIComponent(userEmail)}`)
+    fetch(`${API_BASE_URL}/api/customer/profile?email=${encodeURIComponent(userEmail)}`)
       .then((res) => res.json())
       .then((json) => {
         if (json.status === "success" && json.data) {
@@ -99,7 +100,7 @@ export default function CustomerBooking() {
       .catch((err) => console.warn("Profile fetch note:", err));
 
     // 3. Fetch Customer Designs from DB
-    fetch(`http://localhost:5000/api/customer/design?customerEmail=${encodeURIComponent(userEmail)}`)
+    fetch(`${API_BASE_URL}/api/customer/design?customerEmail=${encodeURIComponent(userEmail)}`)
       .then((res) => res.json())
       .then((json) => {
         if (json.status === "success" && Array.isArray(json.data)) {

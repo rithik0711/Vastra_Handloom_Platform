@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react";
+import { API_BASE_URL } from "../config";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import RAG from "./RAG";
@@ -61,16 +62,16 @@ const Manufacturer = () => {
 
       const [ordersRes, productsRes, profileRes, statsRes] = await Promise.all([
         fetch(
-          `http://localhost:5000/api/manufacturer/orders?manufacturerId=${targetId}`
+          `${API_BASE_URL}/api/manufacturer/orders?manufacturerId=${targetId}`
         ),
         fetch(
-          `http://localhost:5000/api/manufacturer/products?manufacturerId=${targetId}`
+          `${API_BASE_URL}/api/manufacturer/products?manufacturerId=${targetId}`
         ),
         fetch(
-          `http://localhost:5000/api/manufacturer/profile?email=${targetId}`
+          `${API_BASE_URL}/api/manufacturer/profile?email=${targetId}`
         ),
         fetch(
-          `http://localhost:5000/api/manufacturer/stats?manufacturerId=${targetId}`
+          `${API_BASE_URL}/api/manufacturer/stats?manufacturerId=${targetId}`
         )
       ]);
 

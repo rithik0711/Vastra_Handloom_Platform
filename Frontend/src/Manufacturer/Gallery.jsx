@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { API_BASE_URL } from "../config";
 import Sidebar from "./Sidebar";
 import RAG from "./RAG";
 
@@ -57,7 +58,7 @@ export default function Gallery() {
     try {
       setLoading(true);
       const res = await fetch(
-        `http://localhost:5000/api/manufacturer/gallery?manufacturerId=${encodeURIComponent(userEmail)}`
+        `${API_BASE_URL}/api/manufacturer/gallery?manufacturerId=${encodeURIComponent(userEmail)}`
       );
       const json = await res.json();
       if (json.status === "success" && json.data) {
@@ -149,7 +150,7 @@ export default function Gallery() {
 
     try {
       setSubmitting(true);
-      const res = await fetch("http://localhost:5000/api/manufacturer/gallery", {
+      const res = await fetch(`${API_BASE_URL}/api/manufacturer/gallery`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -177,7 +178,7 @@ export default function Gallery() {
     } catch (err) {
       console.error("Save error:", err);
       alert(
-        "Could not connect to backend server at http://localhost:5000. Please ensure 'node server.js' is running in the Backend folder."
+        `Could not connect to backend server at ${API_BASE_URL}. Please ensure 'node server.js' is running in the Backend folder.`
       );
     } finally {
       setSubmitting(false);
@@ -192,7 +193,7 @@ export default function Gallery() {
     }
 
     try {
-      const res = await fetch(`http://localhost:5000/api/manufacturer/gallery/${id}`, {
+      const res = await fetch(`${API_BASE_URL}/api/manufacturer/gallery/${id}`, {
         method: "DELETE"
       });
       const json = await res.json();
